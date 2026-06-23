@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NutritionGapRequest",
+  "type": "object",
+  "required": ["profile", "foods", "nutrients"],
+  "properties": {
+    "profile": {
+      "type": "object",
+      "required": ["age_years", "sex", "country"],
+      "properties": {
+        "age_years": { "type": "number", "minimum": 0 },
+        "sex": { "type": "string", "enum": ["female", "male", "not_specified"] },
+        "pregnancy": { "type": "boolean" },
+        "lactation": { "type": "boolean" },
+        "country": { "type": "string" },
+        "reference_mode": { "type": "string", "enum": ["regulatory_first_then_profile"] }
+      }
+    },
+    "foods": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source_food_code", "portion_g"],
+        "properties": {
+          "source_food_code": { "type": "string" },
+          "portion_g": { "type": "number", "minimum": 0 }
+        }
+      }
+    },
+    "nutrients": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "supplements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "nutrients_per_serving"],
+        "properties": {
+          "name": { "type": "string" },
+          "nutrients_per_serving": { "type": "array" }
+        }
+      }
+    }
+  }
+}
