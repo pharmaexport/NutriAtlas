@@ -1,0 +1,22 @@
+{
+  "reference_system": "EU_VNR_1169_2011",
+  "category": "minerals",
+  "legal_basis": "Regulation (EU) No 1169/2011, Annex XIII",
+  "official_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32011R1169",
+  "values": [
+    { "id": "potassium", "label_fr": "Potassium", "amount": 2000, "unit": "milligram" },
+    { "id": "chloride", "label_fr": "Chlorure", "amount": 800, "unit": "milligram" },
+    { "id": "calcium", "label_fr": "Calcium", "amount": 800, "unit": "milligram" },
+    { "id": "phosphorus", "label_fr": "Phosphore", "amount": 700, "unit": "milligram" },
+    { "id": "magnesium", "label_fr": "Magnesium", "amount": 375, "unit": "milligram" },
+    { "id": "iron", "label_fr": "Fer", "amount": 14, "unit": "milligram" },
+    { "id": "zinc", "label_fr": "Zinc", "amount": 10, "unit": "milligram" },
+    { "id": "copper", "label_fr": "Cuivre", "amount": 1, "unit": "milligram" },
+    { "id": "manganese", "label_fr": "Manganese", "amount": 2, "unit": "milligram" },
+    { "id": "fluoride", "label_fr": "Fluorure", "amount": 3.5, "unit": "milligram" },
+    { "id": "selenium", "label_fr": "Selenium", "amount": 55, "unit": "microgram" },
+    { "id": "chromium", "label_fr": "Chrome", "amount": 40, "unit": "microgram" },
+    { "id": "molybdenum", "label_fr": "Molybdene", "amount": 50, "unit": "microgram" },
+    { "id": "iodine", "label_fr": "Iode", "amount": 150, "unit": "microgram" }
+  ]
+}
