@@ -1,0 +1,16 @@
+{
+  "reference_system": "EU_REFERENCE_INTAKES_1169_2011",
+  "category": "energy_and_macros",
+  "legal_basis": "Regulation (EU) No 1169/2011, Annex XIII",
+  "official_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32011R1169",
+  "values": [
+    { "id": "energy_kj", "label_fr": "Energie", "amount": 8400, "unit": "kilojoule" },
+    { "id": "energy_kcal", "label_fr": "Energie", "amount": 2000, "unit": "kilocalorie" },
+    { "id": "fat", "label_fr": "Matieres grasses", "amount": 70, "unit": "gram" },
+    { "id": "saturates", "label_fr": "Acides gras satures", "amount": 20, "unit": "gram" },
+    { "id": "carbohydrate", "label_fr": "Glucides", "amount": 260, "unit": "gram" },
+    { "id": "sugars", "label_fr": "Sucres", "amount": 90, "unit": "gram" },
+    { "id": "protein", "label_fr": "Proteines", "amount": 50, "unit": "gram" },
+    { "id": "salt", "label_fr": "Sel", "amount": 6, "unit": "gram" }
+  ]
+}
