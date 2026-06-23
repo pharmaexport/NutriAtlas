@@ -1,0 +1,15 @@
+{
+  "reference_system": "EU_RI_1169_2011",
+  "legal_basis": "Regulation EU 1169/2011 Annex XIII",
+  "category": "energy_and_macros",
+  "values": [
+    { "id": "energy_kj", "amount": 8400, "unit": "kJ" },
+    { "id": "energy_kcal", "amount": 2000, "unit": "kcal" },
+    { "id": "fat", "amount": 70, "unit": "g" },
+    { "id": "saturates", "amount": 20, "unit": "g" },
+    { "id": "carbohydrate", "amount": 260, "unit": "g" },
+    { "id": "sugars", "amount": 90, "unit": "g" },
+    { "id": "protein", "amount": 50, "unit": "g" },
+    { "id": "salt", "amount": 6, "unit": "g" }
+  ]
+}
