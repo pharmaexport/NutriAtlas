@@ -1,0 +1,21 @@
+{
+  "reference_system": "EU_VNR_1169_2011",
+  "category": "vitamins",
+  "legal_basis": "Regulation (EU) No 1169/2011, Annex XIII",
+  "official_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32011R1169",
+  "values": [
+    { "id": "vitamin_a", "label_fr": "Vitamine A", "amount": 800, "unit": "microgram" },
+    { "id": "vitamin_d", "label_fr": "Vitamine D", "amount": 5, "unit": "microgram" },
+    { "id": "vitamin_e", "label_fr": "Vitamine E", "amount": 12, "unit": "milligram" },
+    { "id": "vitamin_k", "label_fr": "Vitamine K", "amount": 75, "unit": "microgram" },
+    { "id": "vitamin_c", "label_fr": "Vitamine C", "amount": 80, "unit": "milligram" },
+    { "id": "thiamin", "label_fr": "Thiamine", "amount": 1.1, "unit": "milligram" },
+    { "id": "riboflavin", "label_fr": "Riboflavine", "amount": 1.4, "unit": "milligram" },
+    { "id": "niacin", "label_fr": "Niacine", "amount": 16, "unit": "milligram" },
+    { "id": "vitamin_b6", "label_fr": "Vitamine B6", "amount": 1.4, "unit": "milligram" },
+    { "id": "folic_acid", "label_fr": "Acide folique", "amount": 200, "unit": "microgram" },
+    { "id": "vitamin_b12", "label_fr": "Vitamine B12", "amount": 2.5, "unit": "microgram" },
+    { "id": "biotin", "label_fr": "Biotine", "amount": 50, "unit": "microgram" },
+    { "id": "pantothenic_acid", "label_fr": "Acide pantothenique", "amount": 6, "unit": "milligram" }
+  ]
+}
