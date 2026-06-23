@@ -1,0 +1,21 @@
+{
+  "reference_system": "EU_VNR_1169_2011",
+  "legal_basis": "Regulation EU 1169/2011 Annex XIII",
+  "category": "minerals",
+  "values": [
+    { "id": "potassium", "amount": 2000, "unit": "mg" },
+    { "id": "chloride", "amount": 800, "unit": "mg" },
+    { "id": "calcium", "amount": 800, "unit": "mg" },
+    { "id": "phosphorus", "amount": 700, "unit": "mg" },
+    { "id": "magnesium", "amount": 375, "unit": "mg" },
+    { "id": "iron", "amount": 14, "unit": "mg" },
+    { "id": "zinc", "amount": 10, "unit": "mg" },
+    { "id": "copper", "amount": 1, "unit": "mg" },
+    { "id": "manganese", "amount": 2, "unit": "mg" },
+    { "id": "fluoride", "amount": 3.5, "unit": "mg" },
+    { "id": "selenium", "amount": 55, "unit": "mcg" },
+    { "id": "chromium", "amount": 40, "unit": "mcg" },
+    { "id": "molybdenum", "amount": 50, "unit": "mcg" },
+    { "id": "iodine", "amount": 150, "unit": "mcg" }
+  ]
+}
