@@ -1,0 +1,13 @@
+{
+  "dataset": "CIQUAL",
+  "publisher": "ANSES",
+  "country": "France",
+  "status": "source_master",
+  "official_page": "https://www.anses.fr/fr/content/la-table-de-composition-nutritionnelle-du-ciqual",
+  "official_site": "https://ciqual.anses.fr/",
+  "access": "free_open_data",
+  "description": "French reference food composition database managed by ANSES.",
+  "expected_food_count": 3484,
+  "retrieved_at": "2026-06-23",
+  "license": "to_verify_before_redistribution"
+}
