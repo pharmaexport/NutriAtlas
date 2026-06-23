@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DatasetVersion",
+  "type": "object",
+  "required": [
+    "dataset",
+    "publisher",
+    "version",
+    "source_url",
+    "retrieved_at",
+    "checksum_sha256"
+  ],
+  "properties": {
+    "dataset": { "type": "string" },
+    "publisher": { "type": "string" },
+    "version": { "type": "string" },
+    "source_url": { "type": "string", "format": "uri" },
+    "retrieved_at": { "type": "string", "format": "date-time" },
+    "checksum_sha256": { "type": "string" },
+    "raw_file_path": { "type": "string" },
+    "notes": { "type": "string" }
+  }
+}
