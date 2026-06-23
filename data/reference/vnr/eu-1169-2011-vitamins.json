@@ -1,0 +1,20 @@
+{
+  "reference_system": "EU_VNR_1169_2011",
+  "legal_basis": "Regulation EU 1169/2011 Annex XIII",
+  "category": "vitamins",
+  "values": [
+    { "id": "vitamin_a", "amount": 800, "unit": "mcg" },
+    { "id": "vitamin_d", "amount": 5, "unit": "mcg" },
+    { "id": "vitamin_e", "amount": 12, "unit": "mg" },
+    { "id": "vitamin_k", "amount": 75, "unit": "mcg" },
+    { "id": "vitamin_c", "amount": 80, "unit": "mg" },
+    { "id": "thiamin", "amount": 1.1, "unit": "mg" },
+    { "id": "riboflavin", "amount": 1.4, "unit": "mg" },
+    { "id": "niacin", "amount": 16, "unit": "mg" },
+    { "id": "vitamin_b6", "amount": 1.4, "unit": "mg" },
+    { "id": "folic_acid", "amount": 200, "unit": "mcg" },
+    { "id": "vitamin_b12", "amount": 2.5, "unit": "mcg" },
+    { "id": "biotin", "amount": 50, "unit": "mcg" },
+    { "id": "pantothenic_acid", "amount": 6, "unit": "mg" }
+  ]
+}
