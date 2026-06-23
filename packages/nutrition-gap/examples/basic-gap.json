@@ -1,0 +1,26 @@
+{
+  "nutrient_id": "magnesium",
+  "unit": "milligram",
+  "profile": {
+    "age_years": 35,
+    "sex": "female",
+    "pregnancy": false,
+    "lactation": false,
+    "country": "FR"
+  },
+  "portions": [
+    {
+      "source_food_code": "example_ciqual_food_code",
+      "food_name": "Example food",
+      "portion_g": 150,
+      "value_per_100g": 80,
+      "source": "CIQUAL"
+    }
+  ],
+  "supplement": {
+    "name": "Example magnesium supplement",
+    "amount_per_serving": 200,
+    "unit": "milligram",
+    "source": "product_label"
+  }
+}
