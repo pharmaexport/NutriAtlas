@@ -1,42 +1,75 @@
+import { getFoodByCode, nutrientLabels, type NutrientKey } from "../../../lib/nutrition-data";
+
 type PageProps = {
   params: {
     code: string;
   };
 };
 
-async function getFood(code: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
-  const response = await fetch(`${baseUrl}/api/foods/${code}`, { cache: "no-store" });
-  if (!response.ok) return null;
-  return response.json();
-}
+const priorityNutrients: NutrientKey[] = [
+  "energy_kcal",
+  "protein_g",
+  "carbs_g",
+  "fat_g",
+  "sugars_g",
+  "fiber_g",
+  "magnesium_mg",
+  "potassium_mg",
+  "calcium_mg",
+  "iron_mg",
+  "vitamin_c_mg",
+  "vitamin_d_ug"
+];
 
-export default async function FoodPage({ params }: PageProps) {
-  const data = await getFood(params.code);
+export default function FoodPage({ params }: PageProps) {
+  const food = getFoodByCode(params.code);
 
-  if (!data) {
+  if (!food) {
     return (
-      <main className="foodPage pageSection">
-        <p className="eyebrow">Aliment CIQUAL</p>
-        <h1>Aliment indisponible.</h1>
-        <p>La base PostgreSQL n’est pas encore connectée ou cet aliment n’a pas été trouvé.</p>
+      <main>
+        <nav className="nav">
+          <a className="brand" href="/">NutriAtlas</a>
+          <div className="navLinks"><a href="/search">Recherche</a></div>
+        </nav>
+        <section className="foodPage pageSection">
+          <p className="eyebrow">Aliment</p>
+          <h1>Aliment indisponible.</h1>
+          <p>Retourne a la recherche et selectionne une proposition.</p>
+        </section>
       </main>
     );
   }
 
-  return (
-    <main className="foodPage pageSection">
-      <p className="eyebrow">Aliment CIQUAL {data.food.source_food_code}</p>
-      <h1>{data.food.name}</h1>
-      <p>{data.food.food_group_name_fr}</p>
+  const nutrients = priorityNutrients
+    .map((key) => ({ key, value: food.nutrients[key], label: nutrientLabels[key] }))
+    .filter((item) => typeof item.value === "number");
 
-      <section className="nutrientTable">
-        {(data.nutrients || []).slice(0, 40).map((nutrient: any) => (
-          <div className="nutrientLine" key={nutrient.source_column_name}>
-            <span>{nutrient.name}</span>
-            <strong>{nutrient.original_value || "-"} {nutrient.unit || ""}</strong>
-          </div>
-        ))}
+  return (
+    <main>
+      <nav className="nav">
+        <a className="brand" href="/">NutriAtlas</a>
+        <div className="navLinks">
+          <a href="/search">Recherche</a>
+          <a href="/profil">Profil</a>
+        </div>
+      </nav>
+
+      <section className="foodPage pageSection">
+        <div className="foodHeroCard">
+          <p className="eyebrow">Aliment {food.code}</p>
+          <h1>{food.name}</h1>
+          <p>{food.group}{food.subgroup ? ` - ${food.subgroup}` : ""}</p>
+          <a className="secondaryCta" href="/search">Nouvelle recherche</a>
+        </div>
+
+        <section className="nutrientTable">
+          {nutrients.map((nutrient) => (
+            <div className="nutrientLine" key={nutrient.key}>
+              <span>{nutrient.label.label}</span>
+              <strong>{nutrient.value} {nutrient.label.unit}</strong>
+            </div>
+          ))}
+        </section>
       </section>
     </main>
   );
