@@ -1,10 +1,11 @@
 import "./globals.css";
+import "./product.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
   title: "NutriAtlas",
-  description: "Moteur de recherche nutritionnel base sur CIQUAL, ANSES et des references citees."
+  description: "Moteur nutritionnel personnel pour comprendre les aliments, les portions et les reperes journaliers."
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
