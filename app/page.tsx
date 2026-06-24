@@ -6,20 +6,20 @@ const sampleFoods = [
 
 const features = [
   {
-    title: "Explorer CIQUAL",
-    text: "Trouver rapidement un aliment, son groupe, ses nutriments clés et ses valeurs par portion."
+    title: "Recherche intelligente",
+    text: "Suggestions instantanees, noms alimentaires normalises et selection rapide du bon aliment."
   },
   {
-    title: "Profil santé",
-    text: "Entrer âge, taille, poids, sexe et activité pour calculer IMC, métabolisme et besoins estimés."
+    title: "Profil metabolique",
+    text: "IMC, besoins energetiques, activite et objectifs pour personnaliser les estimations."
   },
   {
-    title: "Gap nutritionnel",
-    text: "Comparer les apports aux VNR UE, puis afficher ce qui reste à couvrir par l’alimentation."
+    title: "Priorites nutritionnelles",
+    text: "Identifier les apports couverts, les manques probables et les aliments les plus pertinents."
   },
   {
-    title: "Traçabilité",
-    text: "Conserver la source, la version et la logique de calcul pour chaque valeur affichée."
+    title: "Precision exploitable",
+    text: "Transformer des donnees nutritionnelles techniques en decisions simples, lisibles et actionnables."
   }
 ];
 
@@ -37,23 +37,22 @@ export default function HomePage() {
 
       <section id="top" className="hero pageSection">
         <div className="heroCopy">
-          <p className="eyebrow">CIQUAL 2025 · VNR UE · Profil</p>
-          <h1>Le copilote nutritionnel clair, sourcé et actionnable.</h1>
+          <p className="eyebrow">Nutrition de precision · Profil · Portions</p>
+          <h1>Le moteur nutritionnel personnel, clair et actionnable.</h1>
           <p className="lead">
-            Rechercher un aliment, convertir les valeurs CIQUAL par portion, comparer aux repères réglementaires,
-            puis décider quoi couvrir par l’alimentation avant tout complément.
+            Rechercher un aliment, choisir la bonne portion, comprendre les apports reels et prioriser ce qui merite vraiment d etre ajuste.
           </p>
           <div className="ctaRow">
             <a className="primaryCta" href="/search">Rechercher un aliment</a>
             <a className="secondaryCta" href="/profil">Calculer mon profil</a>
           </div>
-          <p className="microcopy">Version GitHub-first : le site reste visible sur Vercel, sans dépendance critique à Neon.</p>
+          <p className="microcopy">Une experience concue pour passer de la donnée nutritionnelle brute a une decision simple.</p>
         </div>
 
-        <aside className="heroPanel" aria-label="Aperçu nutritionnel">
+        <aside className="heroPanel" aria-label="Apercu nutritionnel">
           <div className="panelHeader">
             <span>Portions du jour</span>
-            <strong>Démo</strong>
+            <strong>Apercu</strong>
           </div>
           {sampleFoods.map((food) => (
             <div className="foodRow" key={food.name}>
@@ -69,20 +68,19 @@ export default function HomePage() {
             </div>
           ))}
           <div className="gapCard">
-            <span>Gap magnésium estimé</span>
-            <strong>223 mg restants</strong>
-            <p>Priorité : aliments denses, portions réalistes, complément seulement si nécessaire.</p>
+            <span>Priorite estimee</span>
+            <strong>Magnesium</strong>
+            <p>Identifier les aliments les plus denses avant d envisager une correction supplementaire.</p>
           </div>
         </aside>
       </section>
 
       <section id="explorer" className="pageSection split">
         <div>
-          <p className="eyebrow">Produit</p>
-          <h2>Un outil consommateur, pas une simple vitrine.</h2>
+          <p className="eyebrow">Positionnement</p>
+          <h2>Une interface premium pour comprendre son alimentation sans devenir expert.</h2>
           <p>
-            NutriAtlas doit rester simple à comprendre : une recherche, une portion, un profil,
-            un score et des explications lisibles.
+            NutriAtlas combine recherche alimentaire, calcul par portion, profil personnel et priorisation nutritionnelle dans une experience directe.
           </p>
         </div>
         <div className="featureGrid">
@@ -97,35 +95,35 @@ export default function HomePage() {
 
       <section id="gap" className="pageSection calculatorPreview">
         <div>
-          <p className="eyebrow">Fonction clé</p>
-          <h2>Complément nécessaire vs portions alimentaires spécifiques.</h2>
+          <p className="eyebrow">Methode</p>
+          <h2>Des apports par portion aux priorites concretes.</h2>
           <p>
-            Le calcul part des VNR pour l’aspect réglementaire, puis complète par profil lorsque les
-            données d’entrée sont disponibles : âge, sexe, taille, poids, activité et objectif.
+            Les valeurs nutritionnelles deviennent utiles lorsqu elles sont reliees a une portion consommee,
+            a un profil personnel et a un objectif clair.
           </p>
         </div>
         <div className="formula">
-          <code>apport = valeur CIQUAL x portion / 100</code>
-          <code>couverture = apport / référence</code>
-          <code>reste = référence - apport alimentaire</code>
+          <code>portion consommee → apports reels</code>
+          <code>profil personnel → besoins estimes</code>
+          <code>ecart nutritionnel → priorites alimentaires</code>
         </div>
       </section>
 
       <section id="sources" className="pageSection sourceGrid">
         <article>
           <span>01</span>
-          <h3>CIQUAL 2025</h3>
-          <p>Source maître pour la composition nutritionnelle des aliments.</p>
+          <h3>Aliments</h3>
+          <p>Recherche rapide, libelles normalises et valeurs par portion.</p>
         </article>
         <article>
           <span>02</span>
-          <h3>VNR UE</h3>
-          <p>Socle réglementaire pour les pourcentages de référence et les compléments.</p>
+          <h3>Profil</h3>
+          <p>Age, taille, poids, activite et objectif pour personnaliser les estimations.</p>
         </article>
         <article>
           <span>03</span>
-          <h3>Profil</h3>
-          <p>Âge, sexe, taille, poids et activité pour personnaliser les estimations.</p>
+          <h3>Priorites</h3>
+          <p>Une lecture simple des apports, des manques possibles et des meilleurs leviers alimentaires.</p>
         </article>
       </section>
     </main>
