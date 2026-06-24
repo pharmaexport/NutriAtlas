@@ -1,50 +1,25 @@
 import { NextResponse } from "next/server";
-import { getDb, isDatabaseConfigured } from "../../../lib/db";
+import { searchFoods } from "../../../lib/nutrition-data";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get("q") || "").trim();
-
-  if (!q) {
-    return NextResponse.json({ query: q, results: [] });
-  }
-
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json(
-      {
-        query: q,
-        results: [],
-        status: "database_not_configured"
-      },
-      { status: 503 }
-    );
-  }
-
-  const db = getDb();
-  const result = await db.query(
-    `
-      SELECT
-        f.source_food_code,
-        f.name,
-        f.scientific_name,
-        f.food_group_name_fr,
-        dv.version AS dataset_version
-      FROM foods f
-      JOIN dataset_versions dv ON dv.id = f.dataset_version_id
-      WHERE f.name ILIKE $1
-      ORDER BY
-        CASE WHEN f.name ILIKE $2 THEN 0 ELSE 1 END,
-        f.name ASC
-      LIMIT 20
-    `,
-    [`%${q}%`, `${q}%`]
-  );
+  const matches = q ? searchFoods(q) : [];
 
   return NextResponse.json({
     query: q,
-    count: result.rowCount,
-    results: result.rows
+    count: matches.length,
+    source: "github-local-ciqual-preview",
+    results: matches.map((food) => ({
+      source_food_code: food.code,
+      name: food.name,
+      scientific_name: null,
+      food_group_name_fr: food.group,
+      food_subgroup_name_fr: food.subgroup || null,
+      dataset_version: "CIQUAL 2025",
+      nutrients: food.nutrients
+    }))
   });
 }
