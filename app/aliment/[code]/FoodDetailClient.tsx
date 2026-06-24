@@ -29,6 +29,22 @@ type Props = {
   nutrients: NutrientItem[];
 };
 
+type CumulItem = {
+  id: string;
+  foodCode: string;
+  foodName: string;
+  portionLabel: string;
+  grams: number;
+  nutrients: Array<{
+    key: string;
+    label: string;
+    unit: string;
+    value: number;
+    target?: number;
+  }>;
+  createdAt: string;
+};
+
 function round(value: number) {
   return Math.round(value * 10) / 10;
 }
@@ -52,6 +68,13 @@ function scoreFromNutrients(nutrients: NutrientItem[], grams: number) {
   return Math.max(35, Math.min(96, Math.round(62 + positive)));
 }
 
+function readCumulItems(): CumulItem[] {
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+  if (!raw) return [];
+  const parsed = JSON.parse(raw);
+  return Array.isArray(parsed) ? parsed : [];
+}
+
 export function FoodDetailClient({ food, portions, nutrients }: Props) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [added, setAdded] = useState(false);
@@ -73,7 +96,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
     .slice(0, 3);
 
   function addToCumul() {
-    const item = {
+    const item: CumulItem = {
       id: `${food.code}-${Date.now()}`,
       foodCode: food.code,
       foodName: food.name,
@@ -90,8 +113,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
     };
 
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      const existing = raw ? JSON.parse(raw) : [];
+      const existing = readCumulItems();
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...existing, item]));
       setAdded(true);
       window.setTimeout(() => setAdded(false), 2200);
@@ -141,7 +163,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
         <div>
           <span>Energie portion</span>
           <strong>{energy ? `${energy.value} kcal` : "-"}</strong>
-          <small>{energy?.percent !== null ? `${energy?.percent}% du repere 2000 kcal` : "Repere journalier"}</small>
+          <small>{typeof energy?.percent === "number" ? `${energy.percent}% du repere 2000 kcal` : "Repere journalier"}</small>
         </div>
       </div>
 
