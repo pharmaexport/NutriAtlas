@@ -2,18 +2,32 @@
   padding: 42px 0 80px;
 }
 
-.foodHeroCard {
+.foodHeroCard,
+.portionControlCard,
+.highlightCard,
+.nutrientTable {
   border: 1px solid rgba(16, 35, 27, 0.12);
+  background: rgba(255,255,255,.82);
+  box-shadow: 0 24px 80px rgba(16, 35, 27, 0.08);
+}
+
+.foodHeroCard {
   border-radius: 36px;
   padding: clamp(26px, 6vw, 58px);
-  background: linear-gradient(145deg, rgba(255,255,255,.9), rgba(239,247,232,.86));
-  box-shadow: 0 24px 80px rgba(16, 35, 27, 0.1);
+  background: linear-gradient(145deg, rgba(255,255,255,.92), rgba(239,247,232,.88));
+}
+
+.foodHeroPremium {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 18px;
+  align-items: end;
 }
 
 .foodHeroCard h1 {
   max-width: 980px;
   margin: 0;
-  font-size: clamp(2.5rem, 7vw, 5.6rem);
+  font-size: clamp(2.25rem, 7vw, 5.4rem);
   line-height: .92;
   letter-spacing: -.07em;
 }
@@ -26,24 +40,80 @@
   font-weight: 750;
 }
 
+.scoreCard {
+  min-width: 150px;
+  border-radius: 28px;
+  padding: 18px;
+  background: #08261a;
+  color: white;
+  text-align: center;
+}
+
+.scoreCard span,
+.scoreCard small {
+  display: block;
+  color: rgba(255,255,255,.72);
+  font-weight: 850;
+}
+
+.scoreCard strong {
+  display: block;
+  margin: 8px 0 2px;
+  font-size: 3.2rem;
+  line-height: .9;
+  letter-spacing: -.08em;
+}
+
+.portionControlCard {
+  margin-top: 16px;
+  border-radius: 30px;
+  padding: 18px;
+}
+
+.portionControlCard label {
+  display: block;
+  margin-bottom: 10px;
+  color: #607068;
+  font-weight: 950;
+}
+
+.portionControlCard select {
+  width: 100%;
+  border: 1px solid rgba(16,35,27,.12);
+  border-radius: 20px;
+  padding: 15px 16px;
+  background: white;
+  color: #10231b;
+  font-weight: 900;
+}
+
+.portionControlCard p {
+  margin: 12px 0 0;
+  color: #607068;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
 .portionSummary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
-  margin: 28px 0;
+  margin: 16px 0;
 }
 
 .portionSummary div {
   border: 1px solid rgba(16, 35, 27, .1);
   border-radius: 26px;
   padding: 20px;
-  background: rgba(255,255,255,.84);
+  background: rgba(255,255,255,.86);
+  box-shadow: 0 18px 50px rgba(16,35,27,.06);
 }
 
 .portionSummary span,
 .tableHeader span,
 .nutrientLine span,
-.resultAction span {
+.resultAction span,
+.highlightCard span {
   display: block;
   color: #607068;
   font-weight: 850;
@@ -65,21 +135,36 @@
   font-weight: 750;
 }
 
+.highlightCard {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+  border-radius: 30px;
+  padding: 20px;
+  background: #08261a;
+}
+
+.highlightCard span { color: #bfe2a3; }
+.highlightCard div { display: flex; flex-wrap: wrap; gap: 10px; }
+.highlightCard strong {
+  border-radius: 999px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,.1);
+  color: white;
+}
+
 .nutrientTable {
   display: grid;
   gap: 10px;
   margin-top: 18px;
-  border: 1px solid rgba(16,35,27,.1);
   border-radius: 30px;
   padding: 14px;
-  background: rgba(255,255,255,.74);
-  box-shadow: 0 24px 80px rgba(16, 35, 27, 0.08);
 }
 
 .tableHeader,
 .nutrientLine {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr minmax(120px, .8fr) auto;
   gap: 14px;
   align-items: center;
 }
@@ -95,13 +180,15 @@
 }
 
 .nutrientLine strong {
+  display: block;
+  margin-top: 7px;
   color: #10231b;
   font-size: 1rem;
   white-space: nowrap;
 }
 
 .nutrientLine em {
-  min-width: 52px;
+  min-width: 58px;
   padding: 8px 10px;
   border-radius: 999px;
   background: #edf4e8;
@@ -109,6 +196,20 @@
   text-align: center;
   font-style: normal;
   font-weight: 950;
+}
+
+.progressTrack {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #edf3e8;
+}
+
+.progressTrack i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2f7d42, #9ac76f);
 }
 
 .resultAction {
@@ -132,13 +233,16 @@
 
 @media (max-width: 760px) {
   .foodPage { padding-top: 24px; }
+  .foodHeroPremium,
   .portionSummary,
   .tableHeader,
   .nutrientLine {
     grid-template-columns: 1fr;
   }
+  .scoreCard { text-align: left; }
   .tableHeader span:last-child { display: none; }
   .nutrientLine em { width: fit-content; }
+  .progressTrack { width: 100%; }
   .resultCard { grid-template-columns: 1fr; }
   .resultAction { justify-items: start; }
 }
