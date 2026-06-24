@@ -1,4 +1,5 @@
-import { coverage, getFoodByCode, nutrientLabels, portionValue, referenceTargets, type NutrientKey } from "../../../lib/nutrition-data";
+import { FoodDetailClient } from "./FoodDetailClient";
+import { getFoodByCode, nutrientLabels, referenceTargets, type NutrientKey } from "../../../lib/nutrition-data";
 
 type PageProps = {
   params: {
@@ -6,40 +7,82 @@ type PageProps = {
   };
 };
 
-const priorityNutrients: NutrientKey[] = [
+const nutrientOrder: NutrientKey[] = [
   "energy_kcal",
   "protein_g",
   "carbs_g",
   "fat_g",
   "sugars_g",
   "fiber_g",
+  "salt_g",
   "magnesium_mg",
   "potassium_mg",
   "calcium_mg",
   "iron_mg",
   "vitamin_c_mg",
-  "vitamin_d_ug"
+  "vitamin_d_ug",
+  "folate_ug",
+  "sodium_mg"
 ];
 
-const portionByGroup: Record<string, { grams: number; label: string }> = {
-  fruits: { grams: 150, label: "1 fruit moyen" },
-  "produits sucres": { grams: 80, label: "1 part" },
-  cereales: { grams: 60, label: "1 portion" },
-  legumes: { grams: 150, label: "1 portion" },
-  legumineuses: { grams: 150, label: "1 portion" },
-  poissons: { grams: 120, label: "1 filet" },
-  viandes: { grams: 120, label: "1 portion" },
-  oeufs: { grams: 60, label: "1 unite" },
-  "produits laitiers": { grams: 125, label: "1 pot" }
-};
-
-function normalizeGroup(group: string) {
-  return group.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+function normalize(value: string) {
+  return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-function defaultPortion(group: string) {
-  const normalized = normalizeGroup(group);
-  return portionByGroup[normalized] || { grams: 100, label: "100 g" };
+function portionOptions(food: { name: string; group: string; subgroup?: string | null }) {
+  const name = normalize(food.name);
+  const group = normalize(food.group);
+  const options = [
+    { label: "100 g", grams: 100, description: "Reference nutritionnelle standard." }
+  ];
+
+  if (name.includes("banane")) {
+    options.unshift(
+      { label: "1 petite banane", grams: 100, description: "Portion pratique pour une petite banane sans peau." },
+      { label: "1 banane moyenne", grams: 150, description: "Portion estimee pour une banane moyenne." },
+      { label: "1 grande banane", grams: 180, description: "Portion estimee pour une grande banane." }
+    );
+  } else if (name.includes("pomme") || group.includes("fruits")) {
+    options.unshift(
+      { label: "1 petit fruit", grams: 100, description: "Portion pratique pour un petit fruit." },
+      { label: "1 fruit moyen", grams: 150, description: "Portion estimee pour un fruit moyen." },
+      { label: "1 grand fruit", grams: 200, description: "Portion estimee pour un grand fruit." }
+    );
+  } else if (name.includes("oeuf") || group.includes("oeufs")) {
+    options.unshift(
+      { label: "1 oeuf", grams: 60, description: "Portion estimee pour une unite." },
+      { label: "2 oeufs", grams: 120, description: "Portion estimee pour deux unites." }
+    );
+  } else if (group.includes("produits laitiers")) {
+    options.unshift(
+      { label: "1 pot", grams: 125, description: "Portion courante pour un pot individuel." },
+      { label: "1 bol", grams: 250, description: "Portion plus importante de type bol." }
+    );
+  } else if (group.includes("produits sucres") || name.includes("gateau") || name.includes("biscuit")) {
+    options.unshift(
+      { label: "1 petite portion", grams: 40, description: "Petite portion de dessert ou biscuit." },
+      { label: "1 part", grams: 80, description: "Portion estimee pour une part." },
+      { label: "1 grosse part", grams: 120, description: "Portion estimee pour une part plus genereuse." }
+    );
+  } else if (group.includes("poissons") || group.includes("viandes")) {
+    options.unshift(
+      { label: "1 portion", grams: 120, description: "Portion courante pour un plat principal." },
+      { label: "Grande portion", grams: 180, description: "Portion plus genereuse pour un repas." }
+    );
+  } else if (group.includes("legumineuses") || group.includes("legumes")) {
+    options.unshift(
+      { label: "1 portion", grams: 150, description: "Portion courante pour un accompagnement." },
+      { label: "1 bol", grams: 250, description: "Portion plus importante de type bol." }
+    );
+  } else if (group.includes("cereales") || name.includes("pain")) {
+    options.unshift(
+      { label: "1 petite portion", grams: 30, description: "Petite portion ou tranche fine." },
+      { label: "1 portion", grams: 60, description: "Portion courante." },
+      { label: "Grande portion", grams: 100, description: "Portion plus importante." }
+    );
+  }
+
+  return options;
 }
 
 export default function FoodPage({ params }: PageProps) {
@@ -61,17 +104,15 @@ export default function FoodPage({ params }: PageProps) {
     );
   }
 
-  const portion = defaultPortion(food.group);
-  const energy = portionValue(food.nutrients.energy_kcal, portion.grams);
-
-  const nutrients = priorityNutrients
-    .map((key) => {
-      const value = portionValue(food.nutrients[key], portion.grams);
-      const label = nutrientLabels[key];
-      const dailyCoverage = key === "energy_kcal" ? coverage(value, 2000) : coverage(value, referenceTargets[key]);
-      return { key, value, label, dailyCoverage };
-    })
-    .filter((item) => item.value !== null);
+  const nutrients = nutrientOrder
+    .filter((key) => typeof food.nutrients[key] === "number")
+    .map((key) => ({
+      key,
+      label: nutrientLabels[key].label,
+      unit: nutrientLabels[key].unit,
+      per100g: food.nutrients[key] as number,
+      target: key === "energy_kcal" ? 2000 : referenceTargets[key]
+    }));
 
   return (
     <main>
@@ -83,40 +124,16 @@ export default function FoodPage({ params }: PageProps) {
         </div>
       </nav>
 
-      <section className="foodPage pageSection">
-        <div className="foodHeroCard">
-          <p className="eyebrow">Aliment {food.code}</p>
-          <h1>{food.name}</h1>
-          <p>{food.group}{food.subgroup ? ` - ${food.subgroup}` : ""}</p>
-          <div className="portionSummary">
-            <div>
-              <span>Portion estimee</span>
-              <strong>{portion.grams} g</strong>
-              <small>{portion.label}</small>
-            </div>
-            <div>
-              <span>Energie portion</span>
-              <strong>{energy ?? "-"} kcal</strong>
-              <small>Repere journalier : 2000 kcal</small>
-            </div>
-          </div>
-          <a className="secondaryCta" href="/search">Nouvelle recherche</a>
-        </div>
-
-        <section className="nutrientTable">
-          <div className="tableHeader">
-            <span>Valeurs pour la portion</span>
-            <span>% repere journalier</span>
-          </div>
-          {nutrients.map((nutrient) => (
-            <div className="nutrientLine" key={nutrient.key}>
-              <span>{nutrient.label.label}</span>
-              <strong>{nutrient.value} {nutrient.label.unit}</strong>
-              <em>{nutrient.dailyCoverage !== null ? `${nutrient.dailyCoverage}%` : "-"}</em>
-            </div>
-          ))}
-        </section>
-      </section>
+      <FoodDetailClient
+        food={{
+          code: food.code,
+          name: food.name,
+          group: food.group,
+          subgroup: food.subgroup || null
+        }}
+        portions={portionOptions(food)}
+        nutrients={nutrients}
+      />
     </main>
   );
 }
