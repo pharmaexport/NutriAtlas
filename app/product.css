@@ -1,0 +1,144 @@
+.foodPage {
+  padding: 42px 0 80px;
+}
+
+.foodHeroCard {
+  border: 1px solid rgba(16, 35, 27, 0.12);
+  border-radius: 36px;
+  padding: clamp(26px, 6vw, 58px);
+  background: linear-gradient(145deg, rgba(255,255,255,.9), rgba(239,247,232,.86));
+  box-shadow: 0 24px 80px rgba(16, 35, 27, 0.1);
+}
+
+.foodHeroCard h1 {
+  max-width: 980px;
+  margin: 0;
+  font-size: clamp(2.5rem, 7vw, 5.6rem);
+  line-height: .92;
+  letter-spacing: -.07em;
+}
+
+.foodHeroCard p {
+  margin: 18px 0 0;
+  color: #536158;
+  font-size: 1.08rem;
+  line-height: 1.5;
+  font-weight: 750;
+}
+
+.portionSummary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 28px 0;
+}
+
+.portionSummary div {
+  border: 1px solid rgba(16, 35, 27, .1);
+  border-radius: 26px;
+  padding: 20px;
+  background: rgba(255,255,255,.84);
+}
+
+.portionSummary span,
+.tableHeader span,
+.nutrientLine span,
+.resultAction span {
+  display: block;
+  color: #607068;
+  font-weight: 850;
+}
+
+.portionSummary strong {
+  display: block;
+  margin-top: 8px;
+  color: #10231b;
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  line-height: 1;
+  letter-spacing: -.06em;
+}
+
+.portionSummary small {
+  display: block;
+  margin-top: 8px;
+  color: #6b766f;
+  font-weight: 750;
+}
+
+.nutrientTable {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  border: 1px solid rgba(16,35,27,.1);
+  border-radius: 30px;
+  padding: 14px;
+  background: rgba(255,255,255,.74);
+  box-shadow: 0 24px 80px rgba(16, 35, 27, 0.08);
+}
+
+.tableHeader,
+.nutrientLine {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 14px;
+  align-items: center;
+}
+
+.tableHeader {
+  padding: 12px 14px;
+}
+
+.nutrientLine {
+  border-radius: 22px;
+  padding: 16px;
+  background: #fff;
+}
+
+.nutrientLine strong {
+  color: #10231b;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.nutrientLine em {
+  min-width: 52px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: #edf4e8;
+  color: #315530;
+  text-align: center;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.resultAction {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+
+.resultAction span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #08261a;
+  color: white;
+  font-size: .82rem;
+}
+
+.resultCard:hover {
+  transform: translateY(-1px);
+  background: rgba(255,255,255,.92);
+}
+
+@media (max-width: 760px) {
+  .foodPage { padding-top: 24px; }
+  .portionSummary,
+  .tableHeader,
+  .nutrientLine {
+    grid-template-columns: 1fr;
+  }
+  .tableHeader span:last-child { display: none; }
+  .nutrientLine em { width: fit-content; }
+  .resultCard { grid-template-columns: 1fr; }
+  .resultAction { justify-items: start; }
+}
