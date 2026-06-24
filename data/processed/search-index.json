@@ -1,0 +1,130 @@
+[
+  {
+    "code": "13012",
+    "name": "Banane, pulpe, crue",
+    "group": "Fruits",
+    "subgroup": "Fruits tropicaux",
+    "aliases": ["banane", "bananes", "banana"],
+    "nutrients": { "energy_kcal": 90, "protein_g": 1.06, "carbs_g": 19.7, "fat_g": 0.25, "sugars_g": 15.6, "fiber_g": 2.7, "magnesium_mg": 28, "potassium_mg": 320, "vitamin_c_mg": 7.16, "folate_ug": 19 }
+  },
+  {
+    "code": "15004",
+    "name": "Amande",
+    "group": "Fruits a coque et graines",
+    "subgroup": "Fruits oleagineux",
+    "aliases": ["amande", "amandes", "almond", "almonds"],
+    "nutrients": { "energy_kcal": 634, "protein_g": 21.2, "carbs_g": 7.85, "fat_g": 53.4, "sugars_g": 4.35, "fiber_g": 12.5, "magnesium_mg": 232, "potassium_mg": 668, "calcium_mg": 248, "iron_mg": 3, "vitamin_c_mg": 0.5 }
+  },
+  {
+    "code": "26047",
+    "name": "Saumon, cuit",
+    "group": "Poissons",
+    "subgroup": "Poissons gras",
+    "aliases": ["saumon", "saumons", "salmon", "poisson gras"],
+    "nutrients": { "energy_kcal": 205, "protein_g": 22.8, "fat_g": 12.3, "magnesium_mg": 29, "potassium_mg": 384, "vitamin_d_ug": 8.7 }
+  },
+  {
+    "code": "4002",
+    "name": "Oeuf, dur",
+    "group": "Oeufs",
+    "subgroup": "Oeufs cuits",
+    "aliases": ["oeuf", "oeufs", "egg", "eggs", "oeuf dur"],
+    "nutrients": { "energy_kcal": 134, "protein_g": 13.5, "carbs_g": 0.52, "fat_g": 8.62, "magnesium_mg": 12.1, "potassium_mg": 126, "calcium_mg": 52, "iron_mg": 1.9, "vitamin_d_ug": 2 }
+  },
+  {
+    "code": "11109",
+    "name": "Yaourt nature",
+    "group": "Produits laitiers",
+    "subgroup": "Yaourts",
+    "aliases": ["yaourt", "yaourts", "yogourt", "yogurt", "fromage blanc"],
+    "nutrients": { "energy_kcal": 57, "protein_g": 4, "carbs_g": 4.6, "fat_g": 2.6, "sugars_g": 4.6, "calcium_mg": 150, "magnesium_mg": 13, "potassium_mg": 190 }
+  },
+  {
+    "code": "20037",
+    "name": "Lentille, cuite",
+    "group": "Legumineuses",
+    "subgroup": "Legumes secs cuits",
+    "aliases": ["lentille", "lentilles", "lentil", "lentils"],
+    "nutrients": { "energy_kcal": 127, "protein_g": 10.1, "carbs_g": 16.6, "fat_g": 0.58, "fiber_g": 8.45, "magnesium_mg": 36, "potassium_mg": 284, "iron_mg": 2.45, "folate_ug": 59 }
+  },
+  {
+    "code": "20040",
+    "name": "Pois chiche, cuit",
+    "group": "Legumineuses",
+    "subgroup": "Legumes secs cuits",
+    "aliases": ["pois chiche", "pois chiches", "chickpea", "chickpeas", "houmous"],
+    "nutrients": { "energy_kcal": 147, "protein_g": 8.31, "carbs_g": 17.7, "fat_g": 3, "fiber_g": 8.2, "magnesium_mg": 44, "potassium_mg": 291, "iron_mg": 2.86, "folate_ug": 84 }
+  },
+  {
+    "code": "20011",
+    "name": "Riz complet, cuit",
+    "group": "Cereales",
+    "subgroup": "Riz et assimiles",
+    "aliases": ["riz", "riz complet", "brown rice"],
+    "nutrients": { "energy_kcal": 156, "protein_g": 3.2, "carbs_g": 31.7, "fat_g": 1.1, "fiber_g": 1.8, "magnesium_mg": 43, "potassium_mg": 86 }
+  },
+  {
+    "code": "24218",
+    "name": "Pain complet",
+    "group": "Cereales",
+    "subgroup": "Pains",
+    "aliases": ["pain", "pain complet", "pain integral", "whole bread"],
+    "nutrients": { "energy_kcal": 247, "protein_g": 9, "carbs_g": 42, "fat_g": 4.2, "sugars_g": 4.7, "fiber_g": 7.3, "salt_g": 1.32, "magnesium_mg": 82, "potassium_mg": 250, "iron_mg": 2.2 }
+  },
+  {
+    "code": "20004",
+    "name": "Brocoli, cuit",
+    "group": "Legumes",
+    "subgroup": "Legumes cuits",
+    "aliases": ["brocoli", "brocolis", "broccoli"],
+    "nutrients": { "energy_kcal": 35, "protein_g": 2.4, "carbs_g": 2.2, "fat_g": 0.41, "fiber_g": 3, "magnesium_mg": 16, "potassium_mg": 148, "calcium_mg": 59, "vitamin_c_mg": 37, "folate_ug": 108 }
+  },
+  {
+    "code": "20031",
+    "name": "Epinard, cuit",
+    "group": "Legumes",
+    "subgroup": "Legumes feuilles",
+    "aliases": ["epinard", "epinards", "spinach"],
+    "nutrients": { "energy_kcal": 28, "protein_g": 3.2, "carbs_g": 0.5, "fat_g": 0.5, "fiber_g": 3.1, "magnesium_mg": 53, "potassium_mg": 390, "calcium_mg": 141, "iron_mg": 2.14, "folate_ug": 125 }
+  },
+  {
+    "code": "13001",
+    "name": "Pomme, crue",
+    "group": "Fruits",
+    "subgroup": "Fruits frais",
+    "aliases": ["pomme", "pommes", "apple", "apples"],
+    "nutrients": { "energy_kcal": 53, "protein_g": 0.27, "carbs_g": 11.6, "fat_g": 0.25, "sugars_g": 10.4, "fiber_g": 1.4, "potassium_mg": 120, "vitamin_c_mg": 4 }
+  },
+  {
+    "code": "13006",
+    "name": "Orange, crue",
+    "group": "Fruits",
+    "subgroup": "Agrumes",
+    "aliases": ["orange", "oranges", "agrume", "agrumes"],
+    "nutrients": { "energy_kcal": 47, "protein_g": 0.75, "carbs_g": 8.03, "fat_g": 0.3, "sugars_g": 8.03, "fiber_g": 2.7, "potassium_mg": 151, "calcium_mg": 40, "vitamin_c_mg": 47.5, "folate_ug": 30 }
+  },
+  {
+    "code": "31008",
+    "name": "Poulet, blanc, cuit",
+    "group": "Viandes",
+    "subgroup": "Volailles",
+    "aliases": ["poulet", "blanc de poulet", "chicken"],
+    "nutrients": { "energy_kcal": 157, "protein_g": 31.2, "fat_g": 3.2, "magnesium_mg": 34, "potassium_mg": 320 }
+  },
+  {
+    "code": "40001",
+    "name": "Chocolat noir 70% cacao",
+    "group": "Produits sucres",
+    "subgroup": "Chocolats",
+    "aliases": ["chocolat", "chocolat noir", "dark chocolate", "cacao"],
+    "nutrients": { "energy_kcal": 572, "protein_g": 8.7, "carbs_g": 33.9, "fat_g": 42.3, "sugars_g": 29, "fiber_g": 11, "magnesium_mg": 206, "potassium_mg": 715, "iron_mg": 11.9 }
+  },
+  {
+    "code": "13020",
+    "name": "Pruneau, sec",
+    "group": "Fruits",
+    "subgroup": "Fruits seches",
+    "aliases": ["pruneau", "pruneaux", "prune", "prunes", "fruit sec"],
+    "nutrients": { "energy_kcal": 229, "protein_g": 2.1, "carbs_g": 55.4, "fat_g": 0.4, "sugars_g": 38.1, "fiber_g": 7.1, "magnesium_mg": 41, "potassium_mg": 732, "iron_mg": 0.9 }
+  }
+]
