@@ -1,4 +1,4 @@
-import ciqualIndex from "../.generated/ciqual-search-index.json";
+import searchIndex from "../data/processed/search-index.json";
 
 export type NutrientKey =
   | "energy_kcal"
@@ -28,21 +28,7 @@ export type Food = {
   nutrients: Partial<Record<NutrientKey, number>>;
 };
 
-type CiqualIndex = {
-  meta: {
-    dataset: string;
-    publisher: string;
-    version: string;
-    foodCount: number;
-    generatedFrom: string;
-  };
-  foods: Food[];
-};
-
-const index = ciqualIndex as CiqualIndex;
-
-export const ciqualMeta = index.meta;
-export const foods = index.foods;
+export const foods = searchIndex as Food[];
 
 export const nutrientLabels: Record<NutrientKey, { label: string; unit: string }> = {
   energy_kcal: { label: "Energie", unit: "kcal" },
