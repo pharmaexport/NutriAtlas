@@ -51,7 +51,7 @@ button, input, select { font: inherit; }
   align-items: center;
   padding: 54px 0;
 }
-.heroCopy, .heroPanel, .feature, .calculatorPreview, .sourceGrid article, .searchIntro, .stateBox, .resultCard {
+.heroCopy, .heroPanel, .feature, .calculatorPreview, .sourceGrid article, .searchIntro, .stateBox, .resultCard, .profileIntro, .profilePanel, .profileFormPreview article {
   border: 1px solid rgba(16, 35, 27, 0.12);
   background: rgba(255, 255, 255, 0.76);
   box-shadow: 0 24px 80px rgba(16, 35, 27, 0.08);
@@ -68,7 +68,7 @@ button, input, select { font: inherit; }
 h1, h2, h3 { color: #10231b; }
 h1 { margin: 0; font-size: clamp(3rem, 8vw, 6.6rem); line-height: 0.9; letter-spacing: -0.075em; }
 h2 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.1rem); line-height: 0.98; letter-spacing: -0.055em; }
-.lead, .split p, .calculatorPreview p, .searchIntro p {
+.lead, .split p, .calculatorPreview p, .searchIntro p, .profileIntro p, .profileFormPreview p {
   margin: 24px 0 0;
   max-width: 760px;
   color: #46564d;
@@ -88,27 +88,10 @@ h2 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.1rem); line-height: 0.98; letter
 }
 .primaryCta { background: #10231b; color: white; }
 .secondaryCta { border: 1px solid rgba(16, 35, 27, 0.16); background: white; color: #10231b; }
-.searchBox {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 10px;
-  margin-top: 34px;
-  padding: 10px;
-  border: 1px solid rgba(16, 35, 27, 0.12);
-  border-radius: 999px;
-  background: white;
-}
+.searchBox { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; margin-top: 34px; padding: 10px; border: 1px solid rgba(16, 35, 27, 0.12); border-radius: 999px; background: white; }
 .searchBox span { padding-left: 10px; }
 .searchBox input { min-width: 0; border: 0; outline: 0; color: #10231b; }
-.searchBox button {
-  border: 0;
-  border-radius: 999px;
-  padding: 13px 18px;
-  background: #10231b;
-  color: white;
-  font-weight: 900;
-}
+.searchBox button { border: 0; border-radius: 999px; padding: 13px 18px; background: #10231b; color: white; font-weight: 900; }
 .microcopy { margin: 14px 0 0; color: #6b766f; font-weight: 700; }
 .heroPanel { border-radius: 34px; padding: 24px; }
 .panelHeader, .foodRow, .gapCard { display: flex; justify-content: space-between; gap: 18px; align-items: center; }
@@ -143,13 +126,25 @@ h2 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.1rem); line-height: 0.98; letter
 .resultCard strong { display: block; font-size: 1.08rem; }
 .resultCard span { display: block; margin-top: 5px; color: #536158; font-weight: 700; }
 .resultCard code { padding: 8px 10px; border-radius: 999px; background: #edf4e8; color: #34542d; font-weight: 900; }
+.profileHero { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 24px; padding: 54px 0 24px; align-items: stretch; }
+.profileIntro { border-radius: 36px; padding: clamp(28px, 6vw, 62px); }
+.profilePanel { border-radius: 34px; padding: 24px; }
+.metricGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.metricGrid div { padding: 18px; border-radius: 22px; background: #f0f5e9; }
+.metricGrid span, .scenarioGrid span { display: block; color: #5d6b62; font-weight: 850; }
+.metricGrid strong { display: block; margin-top: 8px; color: #10231b; font-size: 2.4rem; line-height: 1; letter-spacing: -0.06em; }
+.metricGrid small { display: block; margin-top: 8px; color: #617167; font-weight: 800; }
+.profileFormPreview { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 22px; padding: 24px 0 70px; }
+.scenarioGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.scenarioGrid article { border-radius: 24px; padding: 20px; }
+.scenarioGrid strong { display: block; margin-bottom: 8px; color: #10231b; font-size: 1.08rem; }
 @media (max-width: 900px) {
   .nav { align-items: flex-start; border-radius: 24px; }
   .navLinks { display: none; }
-  .hero, .split, .calculatorPreview, .sourceGrid { grid-template-columns: 1fr; }
+  .hero, .split, .calculatorPreview, .sourceGrid, .profileHero, .profileFormPreview { grid-template-columns: 1fr; }
   .hero { min-height: auto; padding: 28px 0; }
   .searchBox { grid-template-columns: auto 1fr; border-radius: 26px; }
   .searchBox button { grid-column: 1 / -1; }
-  .featureGrid { grid-template-columns: 1fr; }
+  .featureGrid, .metricGrid, .scenarioGrid { grid-template-columns: 1fr; }
   .resultCard { align-items: flex-start; }
 }
