@@ -1,4 +1,4 @@
-import searchIndex from "../data/processed/search-index.json";
+import ciqualIndex from "../.generated/ciqual-search-index.json";
 
 export type NutrientKey =
   | "energy_kcal"
@@ -12,6 +12,7 @@ export type NutrientKey =
   | "iron_mg"
   | "magnesium_mg"
   | "potassium_mg"
+  | "sodium_mg"
   | "vitamin_c_mg"
   | "vitamin_d_ug"
   | "folate_ug";
@@ -19,11 +20,29 @@ export type NutrientKey =
 export type Food = {
   code: string;
   name: string;
+  scientificName?: string | null;
   group: string;
-  subgroup?: string;
+  subgroup?: string | null;
+  subsubgroup?: string | null;
   aliases?: string[];
   nutrients: Partial<Record<NutrientKey, number>>;
 };
+
+type CiqualIndex = {
+  meta: {
+    dataset: string;
+    publisher: string;
+    version: string;
+    foodCount: number;
+    generatedFrom: string;
+  };
+  foods: Food[];
+};
+
+const index = ciqualIndex as CiqualIndex;
+
+export const ciqualMeta = index.meta;
+export const foods = index.foods;
 
 export const nutrientLabels: Record<NutrientKey, { label: string; unit: string }> = {
   energy_kcal: { label: "Energie", unit: "kcal" },
@@ -37,6 +56,7 @@ export const nutrientLabels: Record<NutrientKey, { label: string; unit: string }
   iron_mg: { label: "Fer", unit: "mg" },
   magnesium_mg: { label: "Magnesium", unit: "mg" },
   potassium_mg: { label: "Potassium", unit: "mg" },
+  sodium_mg: { label: "Sodium", unit: "mg" },
   vitamin_c_mg: { label: "Vitamine C", unit: "mg" },
   vitamin_d_ug: { label: "Vitamine D", unit: "ug" },
   folate_ug: { label: "Vitamine B9", unit: "ug" }
@@ -57,8 +77,6 @@ export const referenceTargets: Partial<Record<NutrientKey, number>> = {
   vitamin_d_ug: 5,
   folate_ug: 200
 };
-
-export const foods = searchIndex as Food[];
 
 export function normalizeText(value: string) {
   return value
@@ -86,6 +104,7 @@ function searchableText(food: Food) {
     food.name,
     food.group,
     food.subgroup || "",
+    food.subsubgroup || "",
     ...(food.aliases || [])
   ].join(" "));
 }
