@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 
+const STORAGE_KEY = "nutriatlas-cumul-v1";
+
 type NutrientItem = {
   key: string;
   label: string;
@@ -52,6 +54,7 @@ function scoreFromNutrients(nutrients: NutrientItem[], grams: number) {
 
 export function FoodDetailClient({ food, portions, nutrients }: Props) {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [added, setAdded] = useState(false);
   const portion = portions[selectedIndex] || portions[0];
 
   const rows = useMemo(() => {
@@ -68,6 +71,34 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
     .filter((row) => typeof row.percent === "number" && row.key !== "energy_kcal")
     .sort((a, b) => (b.percent || 0) - (a.percent || 0))
     .slice(0, 3);
+
+  function addToCumul() {
+    const item = {
+      id: `${food.code}-${Date.now()}`,
+      foodCode: food.code,
+      foodName: food.name,
+      portionLabel: portion.label,
+      grams: portion.grams,
+      nutrients: rows.map((row) => ({
+        key: row.key,
+        label: row.label,
+        unit: row.unit,
+        value: row.value,
+        target: row.target
+      })),
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const existing = raw ? JSON.parse(raw) : [];
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...existing, item]));
+      setAdded(true);
+      window.setTimeout(() => setAdded(false), 2200);
+    } catch {
+      setAdded(false);
+    }
+  }
 
   return (
     <section className="foodPage pageSection">
@@ -112,6 +143,13 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
           <strong>{energy ? `${energy.value} kcal` : "-"}</strong>
           <small>{energy?.percent !== null ? `${energy?.percent}% du repere 2000 kcal` : "Repere journalier"}</small>
         </div>
+      </div>
+
+      <div className="actionRow">
+        <button className="primaryCta addButton" type="button" onClick={addToCumul}>
+          {added ? "Ajoute au cumul" : "Ajouter au cumul"}
+        </button>
+        <a className="secondaryCta" href="/cumul">Voir le cumul</a>
       </div>
 
       {highlights.length > 0 ? (
