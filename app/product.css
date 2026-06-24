@@ -1,11 +1,13 @@
-.foodPage {
+.foodPage,
+.cumulPage {
   padding: 42px 0 80px;
 }
 
 .foodHeroCard,
 .portionControlCard,
 .highlightCard,
-.nutrientTable {
+.nutrientTable,
+.cumulItems {
   border: 1px solid rgba(16, 35, 27, 0.12);
   background: rgba(255,255,255,.82);
   box-shadow: 0 24px 80px rgba(16, 35, 27, 0.08);
@@ -135,6 +137,18 @@
   font-weight: 750;
 }
 
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.addButton {
+  border: 0;
+  cursor: pointer;
+}
+
 .highlightCard {
   display: grid;
   gap: 14px;
@@ -171,6 +185,16 @@
 
 .tableHeader {
   padding: 12px 14px;
+}
+
+.tableHeader button,
+.cumulItem button {
+  border: 1px solid rgba(16,35,27,.12);
+  border-radius: 999px;
+  padding: 9px 12px;
+  background: white;
+  color: #10231b;
+  font-weight: 900;
 }
 
 .nutrientLine {
@@ -212,6 +236,32 @@
   background: linear-gradient(90deg, #2f7d42, #9ac76f);
 }
 
+.cumulItems {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  border-radius: 30px;
+  padding: 14px;
+}
+
+.cumulItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  border-radius: 22px;
+  padding: 16px;
+  background: #fff;
+}
+
+.cumulItem strong,
+.cumulItem span {
+  display: block;
+}
+
+.cumulItem strong { color: #10231b; }
+.cumulItem span { margin-top: 4px; color: #607068; font-weight: 800; }
+
 .resultAction {
   display: grid;
   justify-items: end;
@@ -232,7 +282,8 @@
 }
 
 @media (max-width: 760px) {
-  .foodPage { padding-top: 24px; }
+  .foodPage,
+  .cumulPage { padding-top: 24px; }
   .foodHeroPremium,
   .portionSummary,
   .tableHeader,
@@ -245,4 +296,7 @@
   .progressTrack { width: 100%; }
   .resultCard { grid-template-columns: 1fr; }
   .resultAction { justify-items: start; }
+  .actionRow a,
+  .actionRow button { width: 100%; }
+  .cumulItem { align-items: flex-start; flex-direction: column; }
 }
