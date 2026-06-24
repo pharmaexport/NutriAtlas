@@ -126,5 +126,21 @@
     "subgroup": "Fruits seches",
     "aliases": ["pruneau", "pruneaux", "prune", "prunes", "fruit sec"],
     "nutrients": { "energy_kcal": 229, "protein_g": 2.1, "carbs_g": 55.4, "fat_g": 0.4, "sugars_g": 38.1, "fiber_g": 7.1, "magnesium_mg": 41, "potassium_mg": 732, "iron_mg": 0.9 }
+  },
+  {
+    "code": "92001",
+    "name": "Gateau au chocolat",
+    "group": "Produits sucres",
+    "subgroup": "Gateaux et patisseries",
+    "aliases": ["gateau", "gateaux", "gâteau", "gâteaux", "cake", "chocolate cake", "gateau chocolat"],
+    "nutrients": { "energy_kcal": 410, "protein_g": 5.5, "carbs_g": 48, "fat_g": 21, "sugars_g": 31, "fiber_g": 3.2, "salt_g": 0.55, "magnesium_mg": 42, "iron_mg": 2.1 }
+  },
+  {
+    "code": "92002",
+    "name": "Gateau sec type biscuit",
+    "group": "Produits sucres",
+    "subgroup": "Biscuits et gateaux secs",
+    "aliases": ["biscuit", "biscuits", "gateau sec", "gateaux secs", "cookie", "cookies"],
+    "nutrients": { "energy_kcal": 475, "protein_g": 6.6, "carbs_g": 68, "fat_g": 18, "sugars_g": 27, "fiber_g": 2.8, "salt_g": 0.8, "magnesium_mg": 35, "iron_mg": 1.8 }
   }
 ]
