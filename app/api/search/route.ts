@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db, isDatabaseConfigured } from "../../../lib/db";
+import { getDb, isDatabaseConfigured } from "../../../lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +22,7 @@ export async function GET(request: Request) {
     );
   }
 
+  const db = getDb();
   const result = await db.query(
     `
       SELECT
