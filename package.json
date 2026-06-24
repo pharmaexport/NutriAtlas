@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "python3 scripts/generate_search_index.py || python scripts/generate_search_index.py",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
