@@ -65,7 +65,7 @@ export function AutocompleteSearchClient() {
     setSuggestions([]);
 
     if (nextResults.length === 0) {
-      setMessage("Aucun aliment trouve dans l index local actuel. Essaie banane, amande, saumon, lentille, brocoli ou pain.");
+      setMessage("Aucun aliment trouve. Essaie banane, amande, saumon, lentille, brocoli, gateau ou pain.");
     }
   }
 
@@ -85,7 +85,7 @@ export function AutocompleteSearchClient() {
         <p className="eyebrow">Recherche CIQUAL</p>
         <h1>Rechercher un aliment.</h1>
         <p>
-          Tape quelques lettres, puis choisis une proposition. C est essentiel car les libelles CIQUAL sont precis.
+          Tape quelques lettres, choisis une proposition, puis ouvre la fiche pour voir les apports nutritionnels.
         </p>
       </div>
 
@@ -122,7 +122,10 @@ export function AutocompleteSearchClient() {
               <strong>{food.name}</strong>
               <span>{food.food_group_name_fr || "Groupe non renseigne"}</span>
             </div>
-            <code>{food.source_food_code}</code>
+            <div className="resultAction">
+              <code>{food.source_food_code}</code>
+              <span>Ouvrir</span>
+            </div>
           </a>
         ))}
       </div>
