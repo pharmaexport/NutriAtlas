@@ -1,5 +1,5 @@
-import { SearchClient } from "./SearchClient";
+import { AutocompleteSearchClient } from "./AutocompleteSearchClient";
 
 export default function SearchPage() {
-  return <SearchClient />;
+  return <AutocompleteSearchClient />;
 }
