@@ -23,26 +23,10 @@ type NutrientItem = { key: string; label: string; unit: string; per100g: number;
 type PortionOption = { label: string; grams: number; description: string; };
 type Props = { food: { code: string; name: string; group: string; subgroup?: string | null; }; portions: PortionOption[]; nutrients: NutrientItem[]; };
 type CumulItem = { id: string; foodCode: string; foodName: string; portionLabel: string; grams: number; nutrients: Array<{ key: string; label: string; unit: string; value: number; target?: number; }>; createdAt: string; };
-type ComputedRow = NutrientItem & { value: number; percent: number | null; reference: NutrientReference | null; role: NutrientRole; };
 
 function round(value: number) { return Math.round(value * 10) / 10; }
 function valueForPortion(per100g: number, grams: number) { return round((per100g * grams) / 100); }
 function isEnergyKcal(key: string) { const normalized = key.toLowerCase(); return (normalized.includes("energy") || normalized.includes("energie")) && normalized.includes("kcal"); }
-
-function scoreFromRows(rows: ComputedRow[]) {
-  const useful = rows.filter((row) => typeof row.percent === "number" && !isEnergyKcal(row.key));
-  if (useful.length === 0) return 70;
-  const score = useful.reduce((sum, row) => {
-    const percent = row.percent || 0;
-    if (row.role === "limit") {
-      if (percent <= 80) return sum + 18;
-      if (percent <= 100) return sum + 8;
-      return sum - Math.min(42, percent - 100);
-    }
-    return sum + Math.min(32, percent / 3.5);
-  }, 62);
-  return Math.max(35, Math.min(96, Math.round(score / Math.max(1, useful.length / 4))));
-}
 
 function readCumulItems(): CumulItem[] {
   const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -87,7 +71,6 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
   }), [nutrients, portion.grams, profile, customEnergyKcal]);
 
   const energy = rows.find((row) => isEnergyKcal(row.key));
-  const score = scoreFromRows(rows);
   const highlights = rows
     .filter((row) => typeof row.percent === "number" && !isEnergyKcal(row.key))
     .sort((a, b) => {
@@ -115,7 +98,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
 
   return (
     <section className="foodPage pageSection">
-      <div className="foodHeroCard foodHeroPremium"><div className="foodTitleBlock"><p className="eyebrow">Aliment {food.code}</p><h1>{food.name}</h1><p>{food.group}{food.subgroup ? ` – ${food.subgroup}` : ""}</p></div><div className="scoreCard"><span>Score indicatif</span><strong>{score}</strong><small>/100</small></div></div>
+      <div className="foodHeroCard foodHeroPremium"><div className="foodTitleBlock"><p className="eyebrow">Aliment {food.code}</p><h1>{food.name}</h1><p>{food.group}{food.subgroup ? ` – ${food.subgroup}` : ""}</p></div></div>
       <div className="portionControlCard"><div className="portionControlHeader"><label htmlFor="portion-select">Portion</label><a href="/profil">{profileSummary.referenceModeLabel}</a></div><select id="portion-select" value={selectedIndex} onChange={(event) => setSelectedIndex(Number(event.target.value))}>{portions.map((option, index) => <option value={index} key={`${option.label}-${option.grams}`}>{option.label} – {option.grams} g</option>)}</select><p>{portion.description}</p></div>
       <div className="portionSummary"><div><span>Portion sélectionnée</span><strong>{portion.grams} g</strong><small>{portion.label}</small></div><div><span>Énergie portion</span><strong>{energy ? `${energy.value} kcal` : "-"}</strong><small>{typeof energy?.percent === "number" ? `${energy.percent}% du besoin profil` : "CIQUAL"}</small></div></div>
       <div className="actionRow"><button className="primaryCta addButton" type="button" onClick={addToCumul}>{added ? "Ajouté au cumul" : "Ajouter au cumul"}</button><a className="secondaryCta" href="/cumul">Voir le cumul</a><a className="secondaryCta" href="/profil">Modifier le profil</a></div>
