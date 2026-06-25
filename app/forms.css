@@ -1,0 +1,29 @@
+.errorState {
+  border-color: rgba(142, 38, 38, 0.22);
+  background: rgba(255, 242, 239, 0.9);
+  color: #7b2b22;
+}
+
+.scenarioGrid label {
+  display: block;
+  margin-bottom: 8px;
+  color: #5d6b62;
+  font-weight: 900;
+}
+
+.scenarioGrid input,
+.scenarioGrid select {
+  width: 100%;
+  border: 1px solid rgba(16, 35, 27, 0.14);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: white;
+  color: #10231b;
+  font-weight: 850;
+}
+
+.scenarioGrid input:focus,
+.scenarioGrid select:focus {
+  outline: 2px solid rgba(79, 126, 63, 0.22);
+  border-color: rgba(79, 126, 63, 0.5);
+}

@@ -1,5 +1,12 @@
+import { notFound } from "next/navigation";
+import {
+  getFoodByCode,
+  nutrientLabels,
+  nutrientRoles,
+  referenceTargets,
+  type NutrientKey
+} from "../../../lib/nutrition-data";
 import { FoodDetailClient } from "./FoodDetailClient";
-import { getFoodByCode, nutrientLabels, referenceTargets, type NutrientKey } from "../../../lib/nutrition-data";
 
 type PageProps = {
   params: {
@@ -26,32 +33,36 @@ const nutrientOrder: NutrientKey[] = [
 ];
 
 function normalize(value: string) {
-  return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return value
+    .toLowerCase()
+    .replace(/œ/g, "oe")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function portionOptions(food: { name: string; group: string; subgroup?: string | null }) {
   const name = normalize(food.name);
   const group = normalize(food.group);
   const options = [
-    { label: "100 g", grams: 100, description: "Reference nutritionnelle standard." }
+    { label: "100 g", grams: 100, description: "Référence nutritionnelle standard." }
   ];
 
   if (name.includes("banane")) {
     options.unshift(
       { label: "1 petite banane", grams: 100, description: "Portion pratique pour une petite banane sans peau." },
-      { label: "1 banane moyenne", grams: 150, description: "Portion estimee pour une banane moyenne." },
-      { label: "1 grande banane", grams: 180, description: "Portion estimee pour une grande banane." }
+      { label: "1 banane moyenne", grams: 150, description: "Portion estimée pour une banane moyenne." },
+      { label: "1 grande banane", grams: 180, description: "Portion estimée pour une grande banane." }
     );
   } else if (name.includes("pomme") || group.includes("fruits")) {
     options.unshift(
       { label: "1 petit fruit", grams: 100, description: "Portion pratique pour un petit fruit." },
-      { label: "1 fruit moyen", grams: 150, description: "Portion estimee pour un fruit moyen." },
-      { label: "1 grand fruit", grams: 200, description: "Portion estimee pour un grand fruit." }
+      { label: "1 fruit moyen", grams: 150, description: "Portion estimée pour un fruit moyen." },
+      { label: "1 grand fruit", grams: 200, description: "Portion estimée pour un grand fruit." }
     );
   } else if (name.includes("oeuf") || group.includes("oeufs")) {
     options.unshift(
-      { label: "1 oeuf", grams: 60, description: "Portion estimee pour une unite." },
-      { label: "2 oeufs", grams: 120, description: "Portion estimee pour deux unites." }
+      { label: "1 œuf", grams: 60, description: "Portion estimée pour une unité." },
+      { label: "2 œufs", grams: 120, description: "Portion estimée pour deux unités." }
     );
   } else if (group.includes("produits laitiers")) {
     options.unshift(
@@ -61,13 +72,13 @@ function portionOptions(food: { name: string; group: string; subgroup?: string |
   } else if (group.includes("produits sucres") || name.includes("gateau") || name.includes("biscuit")) {
     options.unshift(
       { label: "1 petite portion", grams: 40, description: "Petite portion de dessert ou biscuit." },
-      { label: "1 part", grams: 80, description: "Portion estimee pour une part." },
-      { label: "1 grosse part", grams: 120, description: "Portion estimee pour une part plus genereuse." }
+      { label: "1 part", grams: 80, description: "Portion estimée pour une part." },
+      { label: "1 grosse part", grams: 120, description: "Portion estimée pour une part plus généreuse." }
     );
   } else if (group.includes("poissons") || group.includes("viandes")) {
     options.unshift(
       { label: "1 portion", grams: 120, description: "Portion courante pour un plat principal." },
-      { label: "Grande portion", grams: 180, description: "Portion plus genereuse pour un repas." }
+      { label: "Grande portion", grams: 180, description: "Portion plus généreuse pour un repas." }
     );
   } else if (group.includes("legumineuses") || group.includes("legumes")) {
     options.unshift(
@@ -89,22 +100,7 @@ export default function FoodPage({ params }: PageProps) {
   const food = getFoodByCode(params.code);
 
   if (!food) {
-    return (
-      <main>
-        <nav className="nav">
-          <a className="brand" href="/">NutriAtlas</a>
-          <div className="navLinks">
-            <a href="/search">Recherche</a>
-            <a href="/cumul">Cumul</a>
-          </div>
-        </nav>
-        <section className="foodPage pageSection">
-          <p className="eyebrow">Aliment</p>
-          <h1>Aliment indisponible.</h1>
-          <p>Retourne a la recherche et selectionne une proposition.</p>
-        </section>
-      </main>
-    );
+    notFound();
   }
 
   const nutrients = nutrientOrder
@@ -114,7 +110,8 @@ export default function FoodPage({ params }: PageProps) {
       label: nutrientLabels[key].label,
       unit: nutrientLabels[key].unit,
       per100g: food.nutrients[key] as number,
-      target: key === "energy_kcal" ? 2000 : referenceTargets[key]
+      target: referenceTargets[key],
+      role: nutrientRoles[key]
     }));
 
   return (
@@ -125,6 +122,7 @@ export default function FoodPage({ params }: PageProps) {
           <a href="/search">Recherche</a>
           <a href="/cumul">Cumul</a>
           <a href="/profil">Profil</a>
+          <a href="/#sources">Sources</a>
         </div>
       </nav>
 
