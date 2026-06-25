@@ -32,7 +32,7 @@ export default function HomePage() {
           <div className="foodRow">
             <div>
               <strong>Recherche intelligente</strong>
-              <span>Suggestions alimentaires normalisées</span>
+              <span>Suggestions alimentaires issues de CIQUAL</span>
             </div>
           </div>
           <div className="foodRow">
@@ -43,8 +43,8 @@ export default function HomePage() {
           </div>
           <div className="gapCard">
             <span>Priorité</span>
-            <strong>Base stable</strong>
-            <p>Le site reste visible pendant que l’index complet est préparé proprement.</p>
+            <strong>CIQUAL 2025</strong>
+            <p>L’index applicatif est généré depuis la table CIQUAL placée dans le dépôt.</p>
           </div>
         </aside>
       </section>
@@ -54,18 +54,18 @@ export default function HomePage() {
           <p className="eyebrow">Sources et transparence</p>
           <h2>Base de référence nutritionnelle.</h2>
           <p>
-            La version actuelle utilise une base CIQUAL de prévisualisation stockée dans le dépôt.
-            La base compressée sert de source de référence, puis génère le fichier traité utilisé par l’application.
+            NutriAtlas utilise la table CIQUAL 2025 fournie par l’ANSES comme source locale unique.
+            Le fichier source est transformé en index applicatif reproductible au build.
           </p>
         </div>
         <div className="scenarioGrid">
           <article>
             <strong>Source</strong>
-            <span>CIQUAL preview, à remplacer par l’import institutionnel complet.</span>
+            <span>CIQUAL 2025 – ANSES.</span>
           </article>
           <article>
             <strong>Méthode</strong>
-            <span>Données compressées, décompression contrôlée, index traité versionné.</span>
+            <span>Table source, génération contrôlée, index traité versionné.</span>
           </article>
           <article>
             <strong>Limite</strong>
