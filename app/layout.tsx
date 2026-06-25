@@ -1,5 +1,6 @@
 import "./globals.css";
 import "./product.css";
+import "./forms.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
