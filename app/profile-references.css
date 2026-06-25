@@ -33,3 +33,18 @@
 .sourceNote { border-radius: 24px; padding: 18px; background: #08261a; color: white; }
 .sourceNote strong { display: block; color: #bfe2a3; }
 .sourceNote p { margin: 8px 0 0; color: rgba(255,255,255,.82); font-size: .98rem; }
+
+.portionControlHeader { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
+.portionControlHeader label { margin: 0; }
+.portionControlHeader a,
+.referencePill { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 9px 12px; background: #eef5e8; color: #315530; font-size: .86rem; font-weight: 950; }
+.referencePill { margin-top: 16px; }
+.nutrientMain small { display: block; margin-top: 5px; max-width: 560px; color: #728078; font-size: .78rem; line-height: 1.35; font-weight: 750; white-space: normal; }
+.nutrientProgress { border: 1px solid transparent; }
+.progressTrack { position: relative; height: 14px; overflow: hidden; border-radius: 999px; background: #edf3e8; }
+.progressTrack i,
+.progressTrack b { position: absolute; top: 0; bottom: 0; display: block; border-radius: 999px; }
+.progressTrack i { left: 0; background: #4c9349; }
+.progressTrack b { right: 0; background: #f0a64d; }
+.nutrientLine em { display: grid; gap: 3px; align-content: center; }
+.nutrientLine em small { display: block; font-size: .68rem; line-height: 1.1; font-weight: 950; }
