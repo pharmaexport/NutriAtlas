@@ -2,6 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  activeEnergyTarget,
+  getReferenceForNutrientWithEnergy,
+  loadCustomEnergyTarget,
+  saveCustomEnergyTarget
+} from "../../lib/energy-reference";
+import {
   activityLevels,
   defaultProfile,
   formatAmount,
@@ -26,20 +32,40 @@ const physiologicalOptions: Array<{ value: PhysiologicalStatus; label: string }>
   { value: "lactating", label: "Allaitement" }
 ];
 
+function normalizeCustomEnergy(value: string) {
+  if (!value.trim()) return null;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  return Math.min(6000, Math.max(900, Math.round(numeric)));
+}
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
+  const [customEnergyKcal, setCustomEnergyKcal] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     setProfile(loadStoredProfile());
+    setCustomEnergyKcal(loadCustomEnergyTarget());
   }, []);
 
   const summary = useMemo(() => summarizeProfile(profile), [profile]);
-  const referenceSummary = useMemo(() => keyReferenceSummary(profile), [profile]);
+  const activeCalories = useMemo(() => activeEnergyTarget(profile, customEnergyKcal), [profile, customEnergyKcal]);
+  const referenceSummary = useMemo(() => {
+    return keyReferenceSummary(profile).map((item) => ({
+      ...item,
+      reference: getReferenceForNutrientWithEnergy(item.key, profile, customEnergyKcal)
+    }));
+  }, [profile, customEnergyKcal]);
 
   function updateNumber(field: "age" | "heightCm" | "weightKg", value: string) {
     setSaved(false);
     setProfile((current) => normalizeProfile({ ...current, [field]: Number(value) }));
+  }
+
+  function updateCustomEnergy(value: string) {
+    setSaved(false);
+    setCustomEnergyKcal(normalizeCustomEnergy(value));
   }
 
   function updateSex(value: ProfileSex) {
@@ -70,6 +96,7 @@ export default function ProfilePage() {
   function saveProfile() {
     const normalized = normalizeProfile(profile);
     saveStoredProfile(normalized);
+    saveCustomEnergyTarget(customEnergyKcal);
     setProfile(normalized);
     setSaved(true);
     window.setTimeout(() => setSaved(false), 2600);
@@ -105,7 +132,7 @@ export default function ProfilePage() {
           <div className="metricGrid">
             <div><span>IMC</span><strong>{summary.bmi.toFixed(1)}</strong><small>{summary.bmiLabel}</small></div>
             <div><span>Métabolisme</span><strong>{summary.bmr}</strong><small>kcal / jour</small></div>
-            <div><span>Besoin estimé</span><strong>{summary.calories}</strong><small>kcal / jour</small></div>
+            <div><span>Objectif calories</span><strong>{activeCalories}</strong><small>{customEnergyKcal ? "saisi manuellement" : "estimé depuis le profil"}</small></div>
             <div><span>Référentiel</span><strong className="metricText">{summary.referenceModeLabel}</strong><small>appliqué au cumul</small></div>
           </div>
         </aside>
@@ -117,7 +144,7 @@ export default function ProfilePage() {
             <p className="eyebrow">Étape 1</p>
             <h2>Mes données de base.</h2>
             <p>
-              Ces données restent locales au navigateur pour cette première version. Elles servent à remplacer les repères génériques par des repères adaptés au profil.
+              Ces données restent locales au navigateur pour cette première version. Les calories peuvent être estimées automatiquement ou fixées manuellement, par exemple à 1 800 kcal/j.
             </p>
           </div>
 
@@ -130,6 +157,7 @@ export default function ProfilePage() {
             <label className="field"><span>Objectif</span><select value={profile.objective} onChange={(event) => updateObjective(event.currentTarget.value as Objective)}>{objectiveOptions.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select></label>
             <label className="field"><span>Situation</span><select value={profile.physiologicalStatus} disabled={profile.sex !== "female"} onChange={(event) => updatePhysiologicalStatus(event.currentTarget.value as PhysiologicalStatus)}>{physiologicalOptions.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select></label>
             <label className="field"><span>Référentiel</span><select value={profile.referenceMode} onChange={(event) => updateReferenceMode(event.currentTarget.value as ReferenceMode)}>{referenceModes.map((mode) => <option value={mode.value} key={mode.value}>{mode.label}</option>)}</select></label>
+            <label className="field"><span>Calories personnalisées</span><input type="number" min="900" max="6000" placeholder={`${summary.calories}`} value={customEnergyKcal ?? ""} onChange={(event) => updateCustomEnergy(event.currentTarget.value)} /><small>vide = estimation automatique</small></label>
           </div>
 
           <button className="primaryCta" type="submit">{saved ? "Profil enregistré" : "Sauvegarder et appliquer"}</button>
@@ -150,7 +178,7 @@ export default function ProfilePage() {
           <div className="sourceNote">
             <strong>Lecture importante</strong>
             <p>
-              Les valeurs ANSES sont utilisées en priorité quand elles existent. Le mode UE reste disponible pour comparer avec les valeurs d’étiquetage, mais il ne remplace pas un référentiel personnalisé.
+              Le cumul énergétique se compare à l’objectif calories actif. Si 1 800 kcal/j est saisi, 900 kcal consommées représentent 50 % de la journée.
             </p>
           </div>
         </div>
