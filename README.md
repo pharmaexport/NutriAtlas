@@ -70,7 +70,7 @@ Si le domaine public retourne une erreur 502, vérifier en priorité :
 
 ## Roadmap
 
-- Étendre l'affichage à davantage de nutriments CIQUAL
+- Exploiter toutes les colonnes nutritionnelles CIQUAL disponibles
 - API nutrition complète
 - Moteur de recherche enrichi
 - Comparateur d'aliments
