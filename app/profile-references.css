@@ -64,6 +64,10 @@
 .toneUnknown em { background: #eef1ed; color: #4d5c54; }
 .cumulPage .foodHeroCard { align-items: center; }
 
+@media (max-width: 900px) {
+  .navLinks { display: flex; }
+}
+
 @media (max-width: 760px) {
   .formGrid,
   .profileFormPreview { grid-template-columns: 1fr; }
