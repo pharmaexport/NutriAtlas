@@ -1,21 +1,6 @@
 import searchIndex from "../data/processed/search-index.json";
 
-export type NutrientKey =
-  | "energy_kcal"
-  | "protein_g"
-  | "carbs_g"
-  | "fat_g"
-  | "sugars_g"
-  | "fiber_g"
-  | "salt_g"
-  | "calcium_mg"
-  | "iron_mg"
-  | "magnesium_mg"
-  | "potassium_mg"
-  | "sodium_mg"
-  | "vitamin_c_mg"
-  | "vitamin_d_ug"
-  | "folate_ug";
+export type NutrientKey = string;
 
 export type Food = {
   code: string;
@@ -25,48 +10,19 @@ export type Food = {
   subgroup?: string | null;
   subsubgroup?: string | null;
   aliases?: string[];
-  nutrients: Partial<Record<NutrientKey, number>>;
+  nutrients: Record<string, number>;
 };
 
 export const foods = searchIndex as Food[];
 
-export const nutrientLabels: Record<NutrientKey, { label: string; unit: string }> = {
-  energy_kcal: { label: "Energie", unit: "kcal" },
-  protein_g: { label: "Proteines", unit: "g" },
-  carbs_g: { label: "Glucides", unit: "g" },
-  fat_g: { label: "Lipides", unit: "g" },
-  sugars_g: { label: "Sucres", unit: "g" },
-  fiber_g: { label: "Fibres", unit: "g" },
-  salt_g: { label: "Sel", unit: "g" },
-  calcium_mg: { label: "Calcium", unit: "mg" },
-  iron_mg: { label: "Fer", unit: "mg" },
-  magnesium_mg: { label: "Magnesium", unit: "mg" },
-  potassium_mg: { label: "Potassium", unit: "mg" },
-  sodium_mg: { label: "Sodium", unit: "mg" },
-  vitamin_c_mg: { label: "Vitamine C", unit: "mg" },
-  vitamin_d_ug: { label: "Vitamine D", unit: "ug" },
-  folate_ug: { label: "Vitamine B9", unit: "ug" }
-};
-
-export const referenceTargets: Partial<Record<NutrientKey, number>> = {
-  protein_g: 50,
-  carbs_g: 260,
-  fat_g: 70,
-  sugars_g: 90,
-  fiber_g: 30,
-  salt_g: 6,
-  calcium_mg: 800,
-  iron_mg: 14,
-  magnesium_mg: 375,
-  potassium_mg: 2000,
-  vitamin_c_mg: 80,
-  vitamin_d_ug: 5,
-  folate_ug: 200
-};
+export const nutrientLabels: Record<string, { label: string; unit: string }> = {};
+export const referenceTargets: Record<string, number> = {};
 
 export function normalizeText(value: string) {
   return value
     .toLowerCase()
+    .replace(/œ/g, "oe")
+    .replace(/æ/g, "ae")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9 ]/g, " ")
