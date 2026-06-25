@@ -48,3 +48,25 @@
 .progressTrack b { right: 0; background: #f0a64d; }
 .nutrientLine em { display: grid; gap: 3px; align-content: center; }
 .nutrientLine em small { display: block; font-size: .68rem; line-height: 1.1; font-weight: 950; }
+
+.tonePositiveOver { border-color: rgba(58, 125, 56, .18); background: #fbfdf8; }
+.tonePositiveOver em,
+.highlightCard strong.tonePositiveOver { background: #e8f3df; color: #245c2b; }
+.toneWarning { border-color: rgba(170, 112, 32, .24); background: #fffaf0; }
+.toneWarning em,
+.highlightCard strong.toneWarning { background: #fff1d7; color: #72460f; }
+.toneDanger { border-color: rgba(160, 54, 54, .32); background: #fff7f4; }
+.toneDanger .progressTrack i { background: #b84c3d; }
+.toneDanger .progressTrack b { background: #f08f57; }
+.toneDanger em,
+.highlightCard strong.toneDanger { background: #ffe1d8; color: #7b241d; }
+.toneNeutral em,
+.toneUnknown em { background: #eef1ed; color: #4d5c54; }
+.cumulPage .foodHeroCard { align-items: center; }
+
+@media (max-width: 760px) {
+  .formGrid,
+  .profileFormPreview { grid-template-columns: 1fr; }
+  .portionControlHeader { align-items: flex-start; flex-direction: column; }
+  .nutrientMain small { max-width: none; }
+}
