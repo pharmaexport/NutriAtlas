@@ -4,12 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 
 const STORAGE_KEY = "nutriatlas-cumul-v1";
 
+type NutrientRole = "positive" | "limit" | "neutral";
+
 type CumulNutrient = {
   key: string;
   label: string;
   unit: string;
   value: number;
   target?: number;
+  role?: NutrientRole;
 };
 
 type CumulItem = {
@@ -31,13 +34,33 @@ function percent(value: number, target?: number) {
   return Math.max(0, Math.round((value / target) * 100));
 }
 
+function localDayKey(value: string | Date) {
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "";
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0")
+  ].join("-");
+}
+
+function isToday(item: CumulItem) {
+  return localDayKey(item.createdAt) === localDayKey(new Date());
+}
+
+function safeParseItems(raw: string | null): CumulItem[] {
+  if (!raw) return [];
+  const parsed = JSON.parse(raw);
+  return Array.isArray(parsed) ? parsed : [];
+}
+
 export function CumulClient() {
   const [items, setItems] = useState<CumulItem[]>([]);
 
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      setItems(raw ? JSON.parse(raw) : []);
+      setItems(safeParseItems(raw));
     } catch {
       setItems([]);
     }
@@ -48,9 +71,12 @@ export function CumulClient() {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   }
 
+  const todayItems = useMemo(() => items.filter(isToday), [items]);
+  const olderItemsCount = items.length - todayItems.length;
+
   const totals = useMemo(() => {
     const map = new Map<string, CumulNutrient>();
-    for (const item of items) {
+    for (const item of todayItems) {
       for (const nutrient of item.nutrients) {
         const current = map.get(nutrient.key);
         if (current) {
@@ -61,9 +87,17 @@ export function CumulClient() {
       }
     }
     return Array.from(map.values());
-  }, [items]);
+  }, [todayItems]);
 
   const energy = totals.find((item) => item.key === "energy_kcal");
+
+  function removeItem(id: string) {
+    save(items.filter((candidate) => candidate.id !== id));
+  }
+
+  function clearToday() {
+    save(items.filter((item) => !isToday(item)));
+  }
 
   return (
     <main>
@@ -72,6 +106,7 @@ export function CumulClient() {
         <div className="navLinks">
           <a href="/search">Recherche</a>
           <a href="/cumul">Cumul</a>
+          <a href="/profil">Profil</a>
         </div>
       </nav>
 
@@ -79,18 +114,24 @@ export function CumulClient() {
         <div className="foodHeroCard foodHeroPremium">
           <div>
             <p className="eyebrow">Cumul journalier</p>
-            <h1>Point nutrition de la journee.</h1>
-            <p>Ajoute des aliments depuis leur fiche pour suivre calories, fibres, vitamines et mineraux.</p>
+            <h1>Point nutrition de la journée.</h1>
+            <p>Ajoute des aliments depuis leur fiche pour suivre calories, fibres, vitamines et minéraux.</p>
           </div>
           <div className="scoreCard">
-            <span>Calories</span>
+            <span>Calories du jour</span>
             <strong>{energy ? energy.value : 0}</strong>
             <small>kcal</small>
           </div>
         </div>
 
-        {items.length === 0 ? (
-          <div className="stateBox">Aucun aliment dans le cumul. Lance une recherche et appuie sur Ajouter au cumul.</div>
+        {olderItemsCount > 0 ? (
+          <div className="stateBox">
+            {olderItemsCount} aliment{olderItemsCount > 1 ? "s" : ""} d’un jour précédent sont conservés localement mais exclus du cumul du jour.
+          </div>
+        ) : null}
+
+        {todayItems.length === 0 ? (
+          <div className="stateBox">Aucun aliment dans le cumul du jour. Lance une recherche et appuie sur Ajouter au cumul.</div>
         ) : (
           <>
             <section className="nutrientTable nutrientDashboard">
@@ -118,16 +159,16 @@ export function CumulClient() {
 
             <section className="cumulItems">
               <div className="tableHeader">
-                <span>Aliments ajoutes</span>
-                <button onClick={() => save([])}>Vider</button>
+                <span>Aliments ajoutés aujourd’hui</span>
+                <button onClick={clearToday}>Vider le jour</button>
               </div>
-              {items.map((item) => (
+              {todayItems.map((item) => (
                 <article className="cumulItem" key={item.id}>
                   <div>
                     <strong>{item.foodName}</strong>
                     <span>{item.portionLabel} · {item.grams} g</span>
                   </div>
-                  <button onClick={() => save(items.filter((candidate) => candidate.id !== item.id))}>Retirer</button>
+                  <button onClick={() => removeItem(item.id)}>Retirer</button>
                 </article>
               ))}
             </section>
