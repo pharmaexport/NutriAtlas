@@ -1,6 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  coveragePercent,
+  defaultProfile,
+  formatAmount,
+  getReferenceForNutrient,
+  loadStoredProfile,
+  roleForNutrient,
+  summarizeProfile,
+  type NutrientReference,
+  type NutrientRole,
+  type UserProfile
+} from "../../../lib/nutrition-profile";
 
 const STORAGE_KEY = "nutriatlas-cumul-v1";
 
@@ -10,6 +22,7 @@ type NutrientItem = {
   unit: string;
   per100g: number;
   target?: number;
+  role?: NutrientRole;
 };
 
 type PortionOption = {
@@ -45,6 +58,13 @@ type CumulItem = {
   createdAt: string;
 };
 
+type ComputedRow = NutrientItem & {
+  value: number;
+  percent: number | null;
+  reference: NutrientReference | null;
+  role: NutrientRole;
+};
+
 function round(value: number) {
   return Math.round(value * 10) / 10;
 }
@@ -53,50 +73,91 @@ function valueForPortion(per100g: number, grams: number) {
   return round((per100g * grams) / 100);
 }
 
-function coverage(value: number, target?: number) {
-  if (!target) return null;
-  return Math.max(0, Math.round((value / target) * 100));
-}
-
-function scoreFromNutrients(nutrients: NutrientItem[], grams: number) {
-  const useful = nutrients
-    .map((nutrient) => coverage(valueForPortion(nutrient.per100g, grams), nutrient.target))
-    .filter((value): value is number => typeof value === "number");
-
+function scoreFromRows(rows: ComputedRow[]) {
+  const useful = rows.filter((row) => typeof row.percent === "number" && !isEnergyKcal(row.key));
   if (useful.length === 0) return 70;
-  const positive = useful.reduce((sum, value) => sum + Math.min(value, 35), 0) / useful.length;
-  return Math.max(35, Math.min(96, Math.round(62 + positive)));
+
+  const score = useful.reduce((sum, row) => {
+    const percent = row.percent || 0;
+    if (row.role === "limit") {
+      if (percent <= 80) return sum + 18;
+      if (percent <= 100) return sum + 8;
+      return sum - Math.min(42, percent - 100);
+    }
+    return sum + Math.min(32, percent / 3.5);
+  }, 62);
+
+  return Math.max(35, Math.min(96, Math.round(score / Math.max(1, useful.length / 4))));
 }
 
 function isEnergyKcal(key: string) {
-  return key.includes("energy") && key.includes("kcal");
+  const normalized = key.toLowerCase();
+  return (normalized.includes("energy") || normalized.includes("energie")) && normalized.includes("kcal");
 }
 
 function readCumulItems(): CumulItem[] {
   const raw = window.localStorage.getItem(STORAGE_KEY);
   if (!raw) return [];
-  const parsed = JSON.parse(raw);
-  return Array.isArray(parsed) ? parsed : [];
+  const parsed = JSON.parse(raw) as unknown;
+  return Array.isArray(parsed) ? parsed as CumulItem[] : [];
+}
+
+function progressTone(role: NutrientRole, percent: number | null) {
+  if (percent === null) return "toneUnknown";
+  if (role === "limit" && percent > 100) return "toneDanger";
+  if (role === "limit" && percent >= 85) return "toneWarning";
+  if (role === "positive" && percent >= 100) return "tonePositiveOver";
+  if (role === "positive") return "tonePositive";
+  return "toneNeutral";
+}
+
+function percentLabel(percent: number | null) {
+  if (percent === null) return "-";
+  return `${percent}%`;
+}
+
+function overflowLabel(percent: number | null, role: NutrientRole) {
+  if (percent === null || percent <= 100) return null;
+  const prefix = role === "limit" ? "dépassement" : "au-dessus";
+  return `+${percent - 100}% ${prefix}`;
+}
+
+function referenceText(reference: NutrientReference | null) {
+  if (!reference) return "Aucun repère personnalisé disponible";
+  return `Repère : ${formatAmount(reference.target, reference.unit)} · ${reference.basis} · ${reference.source}`;
 }
 
 export function FoodDetailClient({ food, portions, nutrients }: Props) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [added, setAdded] = useState(false);
+  const [profile, setProfile] = useState<UserProfile>(defaultProfile);
   const portion = portions[selectedIndex] || portions[0];
+
+  useEffect(() => {
+    setProfile(loadStoredProfile());
+  }, []);
+
+  const profileSummary = useMemo(() => summarizeProfile(profile), [profile]);
 
   const rows = useMemo(() => {
     return nutrients.map((nutrient) => {
       const value = valueForPortion(nutrient.per100g, portion.grams);
-      const percent = coverage(value, nutrient.target);
-      return { ...nutrient, value, percent };
+      const reference = getReferenceForNutrient(nutrient.key, profile);
+      const percent = coveragePercent(value, reference?.target || nutrient.target || null);
+      const role = reference?.role || nutrient.role || roleForNutrient(nutrient.key);
+      return { ...nutrient, value, percent, reference, role };
     });
-  }, [nutrients, portion.grams]);
+  }, [nutrients, portion.grams, profile]);
 
   const energy = rows.find((row) => isEnergyKcal(row.key));
-  const score = scoreFromNutrients(nutrients, portion.grams);
+  const score = scoreFromRows(rows);
   const highlights = rows
     .filter((row) => typeof row.percent === "number" && !isEnergyKcal(row.key))
-    .sort((a, b) => (b.percent || 0) - (a.percent || 0))
+    .sort((a, b) => {
+      const aRisk = a.role === "limit" && (a.percent || 0) > 100 ? 1000 : 0;
+      const bRisk = b.role === "limit" && (b.percent || 0) > 100 ? 1000 : 0;
+      return (bRisk + (b.percent || 0)) - (aRisk + (a.percent || 0));
+    })
     .slice(0, 3);
 
   function addToCumul() {
@@ -111,7 +172,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
         label: row.label,
         unit: row.unit,
         value: row.value,
-        target: row.target
+        target: row.reference?.target || row.target
       })),
       createdAt: new Date().toISOString()
     };
@@ -139,7 +200,10 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
       </div>
 
       <div className="portionControlCard">
-        <label htmlFor="portion-select">Portion</label>
+        <div className="portionControlHeader">
+          <label htmlFor="portion-select">Portion</label>
+          <a href="/profil">{profileSummary.referenceModeLabel}</a>
+        </div>
         <select id="portion-select" value={selectedIndex} onChange={(event) => setSelectedIndex(Number(event.target.value))}>
           {portions.map((option, index) => (
             <option value={index} key={`${option.label}-${option.grams}`}>
@@ -159,7 +223,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
         <div>
           <span>Énergie portion</span>
           <strong>{energy ? `${energy.value} kcal` : "-"}</strong>
-          <small>{typeof energy?.percent === "number" ? `${energy.percent}% du repère 2000 kcal` : "CIQUAL"}</small>
+          <small>{typeof energy?.percent === "number" ? `${energy.percent}% du besoin profil` : "CIQUAL"}</small>
         </div>
       </div>
 
@@ -168,6 +232,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
           {added ? "Ajouté au cumul" : "Ajouter au cumul"}
         </button>
         <a className="secondaryCta" href="/cumul">Voir le cumul</a>
+        <a className="secondaryCta" href="/profil">Modifier le profil</a>
       </div>
 
       {highlights.length > 0 ? (
@@ -175,7 +240,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
           <span>Contributions principales</span>
           <div>
             {highlights.map((item) => (
-              <strong key={item.key}>{item.label} · {item.percent}%</strong>
+              <strong className={progressTone(item.role, item.percent)} key={item.key}>{item.label} · {percentLabel(item.percent)}</strong>
             ))}
           </div>
         </section>
@@ -184,18 +249,28 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
       <section className="nutrientTable nutrientDashboard">
         <div className="tableHeader">
           <span>Valeurs pour la portion</span>
-          <span>% des repères journaliers</span>
+          <span>% des repères profil</span>
         </div>
         {rows.map((nutrient) => {
           const width = Math.min(nutrient.percent || 0, 100);
+          const overflowWidth = Math.min(Math.max((nutrient.percent || 0) - 100, 0), 100);
+          const overflow = overflowLabel(nutrient.percent, nutrient.role);
           return (
-            <div className="nutrientLine nutrientProgress" key={nutrient.key}>
-              <div>
+            <div className={`nutrientLine nutrientProgress ${progressTone(nutrient.role, nutrient.percent)}`} key={nutrient.key}>
+              <div className="nutrientMain">
                 <span>{nutrient.label}</span>
                 <strong>{nutrient.value} {nutrient.unit}</strong>
+                <small>{referenceText(nutrient.reference)}</small>
+                {nutrient.reference?.note ? <small>{nutrient.reference.note}</small> : null}
               </div>
-              <div className="progressTrack"><i style={{ width: `${width}%` }} /></div>
-              <em>{nutrient.percent !== null ? `${nutrient.percent}%` : "-"}</em>
+              <div className="progressTrack">
+                <i style={{ width: `${width}%` }} />
+                {overflowWidth > 0 ? <b style={{ width: `${overflowWidth}%` }} /> : null}
+              </div>
+              <em>
+                {percentLabel(nutrient.percent)}
+                {overflow ? <small>{overflow}</small> : null}
+              </em>
             </div>
           );
         })}
