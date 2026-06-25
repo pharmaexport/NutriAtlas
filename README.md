@@ -1,6 +1,6 @@
 # NutriAtlas
 
-Moteur de recherche nutritionnel basé sur des données traçables.
+Moteur de recherche nutritionnel basé sur la table CIQUAL officielle.
 
 ## État actuel
 
@@ -10,37 +10,51 @@ Le projet est une application Next.js qui couvre déjà :
 - fiches aliment par portion ;
 - cumul journalier local ;
 - profil nutritionnel initial ;
-- base de référence compressée puis décompressée en index applicatif.
+- génération de l'index applicatif depuis la table CIQUAL brute.
 
 ## Données
 
-La base utilisée par l'application est générée depuis une source compressée :
+La seule source de référence alimentaire doit être le fichier CIQUAL brut placé ici :
 
-- source compressée : `data/reference/search-index.json.gz.b64`
-- sortie décompressée : `data/processed/search-index.json`
-- script : `scripts/decompress-reference-base.mjs`
+```text
+data/raw/ciqual/Table Ciqual 2025_FR_2025_11_03 (1).xlsx
+```
 
-Commandes :
+Le générateur lit cette table XLSX et produit :
+
+```text
+data/processed/search-index.json
+data/processed/search-meta.json
+```
+
+Script principal :
+
+```bash
+python3 scripts/generate-ciqual-index.py
+```
+
+La commande existante `npm run data:decompress` reste temporairement conservée pour ne pas casser le build, mais elle délègue désormais vers le générateur CIQUAL brut. Elle ne lit plus l'ancienne base compressée.
+
+Commandes usuelles :
 
 ```bash
 npm run data:decompress
 npm run build
 ```
 
-`npm run build` lance automatiquement la décompression avant `next build`.
+`npm run build` régénère l'index CIQUAL avant `next build`.
 
-## Sources prévues
+## Source officielle
 
-- CIQUAL
+- CIQUAL 2025
 - ANSES
-
-La base actuelle reste une prévisualisation locale. Elle doit être remplacée par l'import institutionnel complet avant toute promesse publique de couverture exhaustive.
+- Fichier source local : `data/raw/ciqual/Table Ciqual 2025_FR_2025_11_03 (1).xlsx`
 
 ## Principes
 
-- Sources officielles uniquement
-- Citations systématiques
-- Versionnage des données
+- Source officielle uniquement
+- Versionnage des données source
+- Génération reproductible
 - Transparence méthodologique
 - Score nutritionnel explicatif, non médical
 
@@ -52,11 +66,11 @@ Si le domaine public retourne une erreur 502, vérifier en priorité :
 2. les logs de build ;
 3. le rattachement du domaine ;
 4. les variables d'environnement ;
-5. la commande de build et la version Node.
+5. la disponibilité de Python 3 pendant le build.
 
 ## Roadmap
 
-- Import CIQUAL complet
+- Étendre l'affichage à davantage de nutriments CIQUAL
 - API nutrition complète
 - Moteur de recherche enrichi
 - Comparateur d'aliments
