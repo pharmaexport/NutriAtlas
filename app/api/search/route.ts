@@ -3,6 +3,8 @@ import { searchFoods } from "../../../lib/nutrition-data";
 
 export const dynamic = "force-dynamic";
 
+const DATA_SOURCE = "ciqual-2025-anses";
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -10,7 +12,7 @@ export async function GET(request: Request) {
 
     if (q.length > 80) {
       return NextResponse.json(
-        { query: q, count: 0, source: "github-local-ciqual-preview", results: [], error: "query_too_long" },
+        { query: q, count: 0, source: DATA_SOURCE, results: [], error: "query_too_long" },
         { status: 400 }
       );
     }
@@ -20,21 +22,21 @@ export async function GET(request: Request) {
     return NextResponse.json({
       query: q,
       count: matches.length,
-      source: "github-local-ciqual-preview",
+      source: DATA_SOURCE,
       results: matches.map((food) => ({
         source_food_code: food.code,
         name: food.name,
         scientific_name: food.scientificName || null,
         food_group_name_fr: food.group,
         food_subgroup_name_fr: food.subgroup || null,
-        dataset_version: "CIQUAL preview",
+        dataset_version: "CIQUAL 2025",
         nutrients: food.nutrients
       }))
     });
   } catch (error) {
     console.error("Search API failed", error);
     return NextResponse.json(
-      { query: "", count: 0, source: "github-local-ciqual-preview", results: [], error: "search_unavailable" },
+      { query: "", count: 0, source: DATA_SOURCE, results: [], error: "search_unavailable" },
       { status: 500 }
     );
   }
