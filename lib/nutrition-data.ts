@@ -17,6 +17,8 @@ export type NutrientKey =
   | "vitamin_d_ug"
   | "folate_ug";
 
+export type NutrientRole = "positive" | "limit" | "neutral";
+
 export type Food = {
   code: string;
   name: string;
@@ -31,8 +33,8 @@ export type Food = {
 export const foods = searchIndex as Food[];
 
 export const nutrientLabels: Record<NutrientKey, { label: string; unit: string }> = {
-  energy_kcal: { label: "Energie", unit: "kcal" },
-  protein_g: { label: "Proteines", unit: "g" },
+  energy_kcal: { label: "Énergie", unit: "kcal" },
+  protein_g: { label: "Protéines", unit: "g" },
   carbs_g: { label: "Glucides", unit: "g" },
   fat_g: { label: "Lipides", unit: "g" },
   sugars_g: { label: "Sucres", unit: "g" },
@@ -40,15 +42,34 @@ export const nutrientLabels: Record<NutrientKey, { label: string; unit: string }
   salt_g: { label: "Sel", unit: "g" },
   calcium_mg: { label: "Calcium", unit: "mg" },
   iron_mg: { label: "Fer", unit: "mg" },
-  magnesium_mg: { label: "Magnesium", unit: "mg" },
+  magnesium_mg: { label: "Magnésium", unit: "mg" },
   potassium_mg: { label: "Potassium", unit: "mg" },
   sodium_mg: { label: "Sodium", unit: "mg" },
   vitamin_c_mg: { label: "Vitamine C", unit: "mg" },
-  vitamin_d_ug: { label: "Vitamine D", unit: "ug" },
-  folate_ug: { label: "Vitamine B9", unit: "ug" }
+  vitamin_d_ug: { label: "Vitamine D", unit: "µg" },
+  folate_ug: { label: "Vitamine B9", unit: "µg" }
+};
+
+export const nutrientRoles: Record<NutrientKey, NutrientRole> = {
+  energy_kcal: "neutral",
+  protein_g: "positive",
+  carbs_g: "neutral",
+  fat_g: "neutral",
+  sugars_g: "limit",
+  fiber_g: "positive",
+  salt_g: "limit",
+  calcium_mg: "positive",
+  iron_mg: "positive",
+  magnesium_mg: "positive",
+  potassium_mg: "positive",
+  sodium_mg: "limit",
+  vitamin_c_mg: "positive",
+  vitamin_d_ug: "positive",
+  folate_ug: "positive"
 };
 
 export const referenceTargets: Partial<Record<NutrientKey, number>> = {
+  energy_kcal: 2000,
   protein_g: 50,
   carbs_g: 260,
   fat_g: 70,
@@ -59,6 +80,7 @@ export const referenceTargets: Partial<Record<NutrientKey, number>> = {
   iron_mg: 14,
   magnesium_mg: 375,
   potassium_mg: 2000,
+  sodium_mg: 2400,
   vitamin_c_mg: 80,
   vitamin_d_ug: 5,
   folate_ug: 200
@@ -67,6 +89,8 @@ export const referenceTargets: Partial<Record<NutrientKey, number>> = {
 export function normalizeText(value: string) {
   return value
     .toLowerCase()
+    .replace(/œ/g, "oe")
+    .replace(/æ/g, "ae")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9 ]/g, " ")
