@@ -1,2 +1,35 @@
-.profileEditor { display: grid; gap: 22px; }
-.referencePreview { display: grid; gap: 22px; }
+.profileEditor,
+.referencePreview,
+.sourceNote {
+  border: 1px solid rgba(16, 35, 27, 0.12);
+  background: rgba(255,255,255,.82);
+  box-shadow: 0 24px 80px rgba(16, 35, 27, 0.08);
+}
+
+.profileEditor,
+.referencePreview {
+  display: grid;
+  gap: 22px;
+  border-radius: 34px;
+  padding: clamp(24px, 5vw, 42px);
+}
+
+.profileEditor .primaryCta { border: 0; cursor: pointer; }
+.formGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.field { position: relative; display: grid; gap: 8px; border-radius: 22px; padding: 16px; background: #f0f5e9; }
+.field span { color: #536158; font-weight: 900; }
+.field input,
+.field select { width: 100%; border: 1px solid rgba(16,35,27,.12); border-radius: 16px; padding: 13px 14px; background: white; color: #10231b; font-weight: 900; }
+.field input:focus,
+.field select:focus { outline: 3px solid rgba(116, 158, 71, .18); border-color: rgba(74, 125, 51, .38); }
+.field select:disabled { opacity: .55; }
+.field small { color: #6b766f; font-weight: 800; }
+.metricText { max-width: 190px; font-size: 1.8rem !important; line-height: 1.02 !important; }
+.referenceList { display: grid; gap: 10px; }
+.referenceList article { border-radius: 22px; padding: 16px; background: #f0f5e9; }
+.referenceList span,
+.referenceList small { display: block; color: #5d6b62; font-weight: 850; }
+.referenceList strong { display: block; margin: 7px 0; color: #10231b; font-size: 1.7rem; line-height: 1; letter-spacing: -.05em; }
+.sourceNote { border-radius: 24px; padding: 18px; background: #08261a; color: white; }
+.sourceNote strong { display: block; color: #bfe2a3; }
+.sourceNote p { margin: 8px 0 0; color: rgba(255,255,255,.82); font-size: .98rem; }
