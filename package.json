@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "data:decompress": "node scripts/decompress-reference-base.mjs",
+    "prebuild": "npm run data:decompress",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
