@@ -68,6 +68,10 @@ function scoreFromNutrients(nutrients: NutrientItem[], grams: number) {
   return Math.max(35, Math.min(96, Math.round(62 + positive)));
 }
 
+function isEnergyKcal(key: string) {
+  return key.includes("energy") && key.includes("kcal");
+}
+
 function readCumulItems(): CumulItem[] {
   const raw = window.localStorage.getItem(STORAGE_KEY);
   if (!raw) return [];
@@ -88,10 +92,10 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
     });
   }, [nutrients, portion.grams]);
 
-  const energy = rows.find((row) => row.key === "energy_kcal");
+  const energy = rows.find((row) => isEnergyKcal(row.key));
   const score = scoreFromNutrients(nutrients, portion.grams);
   const highlights = rows
-    .filter((row) => typeof row.percent === "number" && row.key !== "energy_kcal")
+    .filter((row) => typeof row.percent === "number" && !isEnergyKcal(row.key))
     .sort((a, b) => (b.percent || 0) - (a.percent || 0))
     .slice(0, 3);
 
@@ -112,14 +116,10 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
       createdAt: new Date().toISOString()
     };
 
-    try {
-      const existing = readCumulItems();
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...existing, item]));
-      setAdded(true);
-      window.setTimeout(() => setAdded(false), 2200);
-    } catch {
-      setAdded(false);
-    }
+    const existing = readCumulItems();
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...existing, item]));
+    setAdded(true);
+    window.setTimeout(() => setAdded(false), 2200);
   }
 
   return (
@@ -128,11 +128,11 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
         <div className="foodTitleBlock">
           <p className="eyebrow">Aliment {food.code}</p>
           <h1>{food.name}</h1>
-          <p>{food.group}{food.subgroup ? ` - ${food.subgroup}` : ""}</p>
+          <p>{food.group}{food.subgroup ? ` – ${food.subgroup}` : ""}</p>
         </div>
 
         <div className="scoreCard">
-          <span>Score NutriAtlas</span>
+          <span>Score indicatif</span>
           <strong>{score}</strong>
           <small>/100</small>
         </div>
@@ -140,14 +140,10 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
 
       <div className="portionControlCard">
         <label htmlFor="portion-select">Portion</label>
-        <select
-          id="portion-select"
-          value={selectedIndex}
-          onChange={(event) => setSelectedIndex(Number(event.target.value))}
-        >
+        <select id="portion-select" value={selectedIndex} onChange={(event) => setSelectedIndex(Number(event.target.value))}>
           {portions.map((option, index) => (
             <option value={index} key={`${option.label}-${option.grams}`}>
-              {option.label} - {option.grams} g
+              {option.label} – {option.grams} g
             </option>
           ))}
         </select>
@@ -156,20 +152,20 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
 
       <div className="portionSummary">
         <div>
-          <span>Portion selectionnee</span>
+          <span>Portion sélectionnée</span>
           <strong>{portion.grams} g</strong>
           <small>{portion.label}</small>
         </div>
         <div>
-          <span>Energie portion</span>
+          <span>Énergie portion</span>
           <strong>{energy ? `${energy.value} kcal` : "-"}</strong>
-          <small>{typeof energy?.percent === "number" ? `${energy.percent}% du repere 2000 kcal` : "Repere journalier"}</small>
+          <small>{typeof energy?.percent === "number" ? `${energy.percent}% du repère 2000 kcal` : "CIQUAL"}</small>
         </div>
       </div>
 
       <div className="actionRow">
         <button className="primaryCta addButton" type="button" onClick={addToCumul}>
-          {added ? "Ajoute au cumul" : "Ajouter au cumul"}
+          {added ? "Ajouté au cumul" : "Ajouter au cumul"}
         </button>
         <a className="secondaryCta" href="/cumul">Voir le cumul</a>
       </div>
@@ -188,7 +184,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
       <section className="nutrientTable nutrientDashboard">
         <div className="tableHeader">
           <span>Valeurs pour la portion</span>
-          <span>% des reperes journaliers</span>
+          <span>% des repères journaliers</span>
         </div>
         {rows.map((nutrient) => {
           const width = Math.min(nutrient.percent || 0, 100);
@@ -198,9 +194,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
                 <span>{nutrient.label}</span>
                 <strong>{nutrient.value} {nutrient.unit}</strong>
               </div>
-              <div className="progressTrack" aria-label={`${nutrient.percent || 0}%`}>
-                <i style={{ width: `${width}%` }} />
-              </div>
+              <div className="progressTrack"><i style={{ width: `${width}%` }} /></div>
               <em>{nutrient.percent !== null ? `${nutrient.percent}%` : "-"}</em>
             </div>
           );
