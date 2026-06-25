@@ -1,0 +1,188 @@
+html,
+body {
+  font-family: "Manrope", "Avenir Next", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-feature-settings: "kern" 1, "liga" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background:
+    radial-gradient(circle at 8% 8%, rgba(122, 179, 73, .34), transparent 26rem),
+    radial-gradient(circle at 88% 6%, rgba(255, 196, 87, .26), transparent 25rem),
+    radial-gradient(circle at 62% 92%, rgba(64, 129, 100, .18), transparent 32rem),
+    linear-gradient(145deg, #fff8ed 0%, #eef7e7 48%, #f7ead8 100%);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(16, 35, 27, .035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 35, 27, .035) 1px, transparent 1px);
+  background-size: 38px 38px;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,.55), transparent 72%);
+}
+
+.nav {
+  border-color: rgba(16, 35, 27, .10);
+  background: rgba(255, 255, 255, .72);
+  box-shadow: 0 18px 70px rgba(16, 35, 27, .10);
+}
+
+.brand {
+  letter-spacing: -.015em;
+  font-weight: 900;
+}
+
+.navLinks a {
+  letter-spacing: -.01em;
+  transition: transform .18s ease, background .18s ease, color .18s ease;
+}
+
+.navLinks a:hover {
+  transform: translateY(-1px);
+}
+
+h1 {
+  letter-spacing: -.026em;
+  line-height: .98;
+  font-weight: 850;
+  text-wrap: balance;
+}
+
+h2 {
+  letter-spacing: -.022em;
+  line-height: 1.04;
+  font-weight: 850;
+  text-wrap: balance;
+}
+
+.eyebrow {
+  letter-spacing: .08em;
+  color: #5f8d35;
+}
+
+.heroCopy,
+.heroPanel,
+.profileIntro,
+.profilePanel,
+.profileEditor,
+.referencePreview,
+.foodHeroCard,
+.portionControlCard,
+.highlightCard,
+.nutrientTable,
+.cumulItems,
+.searchIntro,
+.resultCard,
+.stateBox {
+  border-color: rgba(16, 35, 27, .10);
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.90), rgba(255,255,255,.64)),
+    radial-gradient(circle at 12% 0%, rgba(255, 199, 95, .18), transparent 18rem);
+  box-shadow: 0 22px 70px rgba(22, 50, 37, .10), inset 0 1px 0 rgba(255,255,255,.72);
+}
+
+.heroCopy,
+.profileIntro,
+.foodHeroCard {
+  position: relative;
+  overflow: hidden;
+}
+
+.heroCopy::after,
+.profileIntro::after,
+.foodHeroCard::after {
+  content: "";
+  position: absolute;
+  width: 190px;
+  height: 190px;
+  right: -70px;
+  top: -70px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(116, 167, 68, .20), transparent 70%);
+}
+
+.primaryCta,
+.searchBox button {
+  background: linear-gradient(135deg, #10291d, #2d6b39 58%, #89ae44);
+  box-shadow: 0 18px 44px rgba(45, 107, 57, .24);
+  letter-spacing: -.01em;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.primaryCta:hover,
+.searchBox button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 22px 52px rgba(45, 107, 57, .30);
+}
+
+.secondaryCta,
+.referencePill,
+.portionControlHeader a {
+  background: rgba(255,255,255,.78);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 10px 28px rgba(16,35,27,.06);
+}
+
+.field,
+.referenceList article,
+.metricGrid div,
+.portionSummary div,
+.nutrientLine,
+.cumulItem {
+  background: linear-gradient(145deg, #ffffff, #f3f8ed);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.84);
+}
+
+.progressTrack {
+  box-shadow: inset 0 0 0 1px rgba(16,35,27,.05);
+}
+
+.progressTrack i {
+  background: linear-gradient(90deg, #2d7b3f, #8cc152);
+}
+
+.progressTrack b {
+  background: linear-gradient(90deg, #f0a64d, #d96a48);
+}
+
+.scoreCard {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .nav {
+    align-items: center;
+    border-radius: 28px;
+  }
+
+  .navLinks {
+    display: flex;
+    max-width: 62vw;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .navLinks::-webkit-scrollbar {
+    display: none;
+  }
+
+  .navLinks a {
+    flex: 0 0 auto;
+    padding: 9px 11px;
+    font-size: .9rem;
+  }
+
+  h1 {
+    font-size: clamp(2.45rem, 11vw, 4.6rem);
+    letter-spacing: -.018em;
+    line-height: 1.03;
+  }
+
+  h2 {
+    letter-spacing: -.015em;
+  }
+}
