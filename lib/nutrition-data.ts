@@ -14,7 +14,6 @@ export type Food = {
 };
 
 export const foods = searchIndex as Food[];
-
 export const nutrientLabels: Record<string, { label: string; unit: string }> = {};
 export const referenceTargets: Record<string, number> = {};
 
@@ -33,22 +32,16 @@ export function normalizeText(value: string) {
 function simplifyPlural(value: string) {
   return value
     .split(" ")
-    .map((word) => {
-      if (word.length > 4 && word.endsWith("aux")) return `${word.slice(0, -3)}al`;
-      if (word.length > 3 && word.endsWith("s")) return word.slice(0, -1);
-      return word;
-    })
+    .map((word) => word.length > 3 && word.endsWith("s") ? word.slice(0, -1) : word)
     .join(" ");
 }
 
 function searchableText(food: Food) {
-  return normalizeText([
-    food.name,
-    food.group,
-    food.subgroup || "",
-    food.subsubgroup || "",
-    ...(food.aliases || [])
-  ].join(" "));
+  return normalizeText([food.name, food.group, food.subgroup || "", food.subsubgroup || "", ...(food.aliases || [])].join(" "));
+}
+
+function wordStartsWith(text: string, query: string) {
+  return text.split(" ").some((word) => word.startsWith(query));
 }
 
 export function searchFoods(query: string, limit = 20) {
@@ -60,6 +53,7 @@ export function searchFoods(query: string, limit = 20) {
     .map((food) => {
       const name = normalizeText(food.name);
       const aliases = (food.aliases || []).map(normalizeText);
+      const aliasText = aliases.join(" ");
       const haystack = searchableText(food);
       let score = 100;
 
@@ -67,8 +61,12 @@ export function searchFoods(query: string, limit = 20) {
       else if (name === singularQ || aliases.includes(singularQ)) score = 1;
       else if (name.startsWith(q) || aliases.some((alias) => alias.startsWith(q))) score = 2;
       else if (name.startsWith(singularQ) || aliases.some((alias) => alias.startsWith(singularQ))) score = 3;
-      else if (haystack.includes(q)) score = 4;
-      else if (haystack.includes(singularQ)) score = 5;
+      else if (wordStartsWith(name, q) || wordStartsWith(aliasText, q)) score = 4;
+      else if (wordStartsWith(name, singularQ) || wordStartsWith(aliasText, singularQ)) score = 5;
+      else if (name.includes(q) || aliases.some((alias) => alias.includes(q))) score = 6;
+      else if (name.includes(singularQ) || aliases.some((alias) => alias.includes(singularQ))) score = 7;
+      else if (q.length >= 4 && haystack.includes(q)) score = 30;
+      else if (singularQ.length >= 4 && haystack.includes(singularQ)) score = 31;
 
       return { food, score };
     })

@@ -4,45 +4,46 @@ export default function HomePage() {
       <nav className="nav">
         <a className="brand" href="/">NutriAtlas</a>
         <div className="navLinks">
-          <a href="/search">Recherche</a>
           <a href="/profil">Profil</a>
+          <a href="/search">Recherche</a>
+          <a href="/cumul">Cumul</a>
         </div>
       </nav>
 
       <section className="hero pageSection">
         <div className="heroCopy">
-          <p className="eyebrow">Nutrition de precision</p>
-          <h1>Comprendre chaque aliment. Mieux nourrir votre corps.</h1>
+          <p className="eyebrow">Nutrition de précision</p>
+          <h1>Définir son profil. Comprendre chaque aliment.</h1>
           <p className="lead">
-            NutriAtlas aide a rechercher un aliment, comprendre ses apports et preparer un profil nutritionnel personnel.
+            NutriAtlas commence par l’âge, le sexe, la taille, le poids et l’activité pour relier les aliments aux références nutritionnelles adaptées.
           </p>
           <div className="ctaRow">
-            <a className="primaryCta" href="/search">Rechercher un aliment</a>
-            <a className="secondaryCta" href="/profil">Mon profil</a>
+            <a className="primaryCta" href="/profil">Définir mon profil</a>
+            <a className="secondaryCta" href="/search">Rechercher un aliment</a>
           </div>
         </div>
 
         <aside className="heroPanel">
           <div className="panelHeader">
-            <span>Apercu</span>
+            <span>Aperçu</span>
             <strong>NutriAtlas</strong>
           </div>
           <div className="foodRow">
             <div>
-              <strong>Recherche intelligente</strong>
-              <span>Suggestions alimentaires</span>
+              <strong>Profil d’abord</strong>
+              <span>Âge, sexe, taille, poids, activité</span>
             </div>
           </div>
           <div className="foodRow">
             <div>
-              <strong>Analyse par portion</strong>
-              <span>Apports utiles et lisibles</span>
+              <strong>Références ANSES</strong>
+              <span>Repères personnalisés et sources visibles</span>
             </div>
           </div>
           <div className="gapCard">
-            <span>Priorite</span>
-            <strong>Base stable</strong>
-            <p>Le site reste visible pendant que l index complet est prepare proprement.</p>
+            <span>Priorité</span>
+            <strong>Dépassements lisibles</strong>
+            <p>Les barres distinguent désormais objectif atteint, dépassement utile et dépassement à limiter.</p>
           </div>
         </aside>
       </section>
