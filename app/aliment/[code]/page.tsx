@@ -1,88 +1,65 @@
 import { FoodDetailClient } from "./FoodDetailClient";
-import { getFoodByCode, nutrientLabels, referenceTargets, type NutrientKey } from "../../../lib/nutrition-data";
+import { getFoodByCode } from "../../../lib/nutrition-data";
 
-type PageProps = {
-  params: {
-    code: string;
-  };
-};
+type PageProps = { params: { code: string } };
 
-const nutrientOrder: NutrientKey[] = [
-  "energy_kcal",
-  "protein_g",
-  "carbs_g",
-  "fat_g",
-  "sugars_g",
-  "fiber_g",
-  "salt_g",
-  "magnesium_mg",
-  "potassium_mg",
-  "calcium_mg",
-  "iron_mg",
-  "vitamin_c_mg",
-  "vitamin_d_ug",
-  "folate_ug",
-  "sodium_mg"
-];
-
-function normalize(value: string) {
-  return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+function unitFor(key: string) {
+  if (key.endsWith("_ug")) return "µg";
+  if (key.endsWith("_mg")) return "mg";
+  if (key.endsWith("_g")) return "g";
+  if (key.endsWith("_kcal")) return "kcal";
+  if (key.endsWith("_kj")) return "kJ";
+  return "";
 }
 
-function portionOptions(food: { name: string; group: string; subgroup?: string | null }) {
-  const name = normalize(food.name);
-  const group = normalize(food.group);
-  const options = [
-    { label: "100 g", grams: 100, description: "Reference nutritionnelle standard." }
-  ];
+function labelFor(key: string) {
+  const clean = key.replace(/_(ug|mg|g|kcal|kj)$/u, "");
+  return clean
+    .split("_")
+    .filter(Boolean)
+    .map((part) => {
+      if (part === "vitamin") return "Vitamine";
+      if (part.length <= 2) return part.toUpperCase();
+      return `${part[0].toUpperCase()}${part.slice(1)}`;
+    })
+    .join(" ");
+}
 
-  if (name.includes("banane")) {
-    options.unshift(
-      { label: "1 petite banane", grams: 100, description: "Portion pratique pour une petite banane sans peau." },
-      { label: "1 banane moyenne", grams: 150, description: "Portion estimee pour une banane moyenne." },
-      { label: "1 grande banane", grams: 180, description: "Portion estimee pour une grande banane." }
-    );
-  } else if (name.includes("pomme") || group.includes("fruits")) {
-    options.unshift(
-      { label: "1 petit fruit", grams: 100, description: "Portion pratique pour un petit fruit." },
-      { label: "1 fruit moyen", grams: 150, description: "Portion estimee pour un fruit moyen." },
-      { label: "1 grand fruit", grams: 200, description: "Portion estimee pour un grand fruit." }
-    );
-  } else if (name.includes("oeuf") || group.includes("oeufs")) {
-    options.unshift(
-      { label: "1 oeuf", grams: 60, description: "Portion estimee pour une unite." },
-      { label: "2 oeufs", grams: 120, description: "Portion estimee pour deux unites." }
-    );
-  } else if (group.includes("produits laitiers")) {
-    options.unshift(
-      { label: "1 pot", grams: 125, description: "Portion courante pour un pot individuel." },
-      { label: "1 bol", grams: 250, description: "Portion plus importante de type bol." }
-    );
-  } else if (group.includes("produits sucres") || name.includes("gateau") || name.includes("biscuit")) {
-    options.unshift(
-      { label: "1 petite portion", grams: 40, description: "Petite portion de dessert ou biscuit." },
-      { label: "1 part", grams: 80, description: "Portion estimee pour une part." },
-      { label: "1 grosse part", grams: 120, description: "Portion estimee pour une part plus genereuse." }
-    );
-  } else if (group.includes("poissons") || group.includes("viandes")) {
-    options.unshift(
-      { label: "1 portion", grams: 120, description: "Portion courante pour un plat principal." },
-      { label: "Grande portion", grams: 180, description: "Portion plus genereuse pour un repas." }
-    );
-  } else if (group.includes("legumineuses") || group.includes("legumes")) {
-    options.unshift(
-      { label: "1 portion", grams: 150, description: "Portion courante pour un accompagnement." },
-      { label: "1 bol", grams: 250, description: "Portion plus importante de type bol." }
-    );
-  } else if (group.includes("cereales") || name.includes("pain")) {
-    options.unshift(
-      { label: "1 petite portion", grams: 30, description: "Petite portion ou tranche fine." },
-      { label: "1 portion", grams: 60, description: "Portion courante." },
-      { label: "Grande portion", grams: 100, description: "Portion plus importante." }
-    );
-  }
+function roleFor(key: string): "positive" | "limit" | "neutral" {
+  if (key.includes("sugar") || key.includes("salt") || key.includes("sodium")) return "limit";
+  if (
+    key.includes("vitamin") ||
+    key.includes("calcium") ||
+    key.includes("iron") ||
+    key.includes("magnesium") ||
+    key.includes("potassium") ||
+    key.includes("selenium") ||
+    key.includes("zinc") ||
+    key.includes("fiber") ||
+    key.includes("protein")
+  ) return "positive";
+  return "neutral";
+}
 
-  return options;
+function sortScore(key: string) {
+  if (key.includes("energy")) return 0;
+  if (key.includes("protein") || key.includes("carb") || key.includes("fat") || key.includes("sugar") || key.includes("fiber") || key.includes("salt")) return 1;
+  if (key.includes("calcium") || key.includes("iron") || key.includes("magnesium") || key.includes("potassium") || key.includes("sodium") || key.includes("zinc") || key.includes("selenium")) return 2;
+  if (key.includes("vitamin") || key.includes("retinol") || key.includes("carotene") || key.includes("folate")) return 3;
+  return 4;
+}
+
+function nutrientsFor(food: { nutrients: Record<string, number> }) {
+  return Object.entries(food.nutrients || {})
+    .filter(([, value]) => typeof value === "number")
+    .sort(([a], [b]) => sortScore(a) - sortScore(b) || a.localeCompare(b, "fr"))
+    .map(([key, per100g]) => ({
+      key,
+      label: labelFor(key),
+      unit: unitFor(key),
+      per100g,
+      role: roleFor(key)
+    }));
 }
 
 export default function FoodPage({ params }: PageProps) {
@@ -101,21 +78,11 @@ export default function FoodPage({ params }: PageProps) {
         <section className="foodPage pageSection">
           <p className="eyebrow">Aliment</p>
           <h1>Aliment indisponible.</h1>
-          <p>Retourne a la recherche et selectionne une proposition.</p>
+          <p>Retourne à la recherche et sélectionne une proposition.</p>
         </section>
       </main>
     );
   }
-
-  const nutrients = nutrientOrder
-    .filter((key) => typeof food.nutrients[key] === "number")
-    .map((key) => ({
-      key,
-      label: nutrientLabels[key].label,
-      unit: nutrientLabels[key].unit,
-      per100g: food.nutrients[key] as number,
-      target: key === "energy_kcal" ? 2000 : referenceTargets[key]
-    }));
 
   return (
     <main>
@@ -129,14 +96,9 @@ export default function FoodPage({ params }: PageProps) {
       </nav>
 
       <FoodDetailClient
-        food={{
-          code: food.code,
-          name: food.name,
-          group: food.group,
-          subgroup: food.subgroup || null
-        }}
-        portions={portionOptions(food)}
-        nutrients={nutrients}
+        food={{ code: food.code, name: food.name, group: food.group, subgroup: food.subgroup || null }}
+        portions={[{ label: "100 g", grams: 100, description: "Référence nutritionnelle standard CIQUAL." }]}
+        nutrients={nutrientsFor(food)}
       />
     </main>
   );
