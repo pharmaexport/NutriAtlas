@@ -6,7 +6,9 @@
     "node": "20.x"
   },
   "scripts": {
+    "predev": "python3 scripts/generate_search_index.py || python scripts/generate_search_index.py",
     "dev": "next dev",
+    "prebuild": "python3 scripts/generate_search_index.py || python scripts/generate_search_index.py",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
