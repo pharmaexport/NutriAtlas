@@ -1,4 +1,4 @@
-import searchIndex from "../data/processed/search-index.json";
+import ciqualIndex from "../.generated/ciqual-search-index.json";
 
 export type NutrientKey = string;
 
@@ -13,7 +13,21 @@ export type Food = {
   nutrients: Record<string, number>;
 };
 
-export const foods = searchIndex as Food[];
+type CiqualIndex = {
+  meta: {
+    dataset: string;
+    publisher: string;
+    version: string;
+    foodCount: number;
+    generatedFrom: string;
+  };
+  foods: Food[];
+};
+
+const index = ciqualIndex as CiqualIndex;
+
+export const ciqualMeta = index.meta;
+export const foods = index.foods;
 export const nutrientLabels: Record<string, { label: string; unit: string }> = {};
 export const referenceTargets: Record<string, number> = {};
 
