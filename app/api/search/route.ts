@@ -11,11 +11,11 @@ export async function GET(request: Request) {
   return NextResponse.json({
     query: q,
     count: matches.length,
-    source: "github-local-ciqual-preview",
+    source: "ciqual-generated-index",
     results: matches.map((food) => ({
       source_food_code: food.code,
       name: food.name,
-      scientific_name: null,
+      scientific_name: food.scientificName || null,
       food_group_name_fr: food.group,
       food_subgroup_name_fr: food.subgroup || null,
       dataset_version: "CIQUAL 2025",
