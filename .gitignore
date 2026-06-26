@@ -9,6 +9,7 @@ __pycache__/
 
 # Build outputs
 .next/
+.generated/
 dist/
 build/
 
