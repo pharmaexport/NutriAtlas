@@ -1,5 +1,5 @@
-import { AutocompleteSearchClient } from "./AutocompleteSearchClient";
+import { redirect } from "next/navigation";
 
 export default function SearchPage() {
-  return <AutocompleteSearchClient />;
+  redirect("/ciqual");
 }
