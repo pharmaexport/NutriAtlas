@@ -35,6 +35,15 @@ const physiologicalOptions: Array<{ value: PhysiologicalStatus; label: string }>
 
 type RequiredNumberField = "age" | "heightCm" | "weightKg";
 type OptionalNumberField = "targetWeightKg" | "waistCm" | "activityMinutesPerWeek" | "proteinFactor" | "carbPercent" | "fatPercent" | "mealsPerDay";
+type RequiredNumberDrafts = Record<RequiredNumberField, string>;
+
+function draftsFromProfile(profile: UserProfile): RequiredNumberDrafts {
+  return {
+    age: String(profile.age),
+    heightCm: String(profile.heightCm),
+    weightKg: String(profile.weightKg)
+  };
+}
 
 function normalizeCustomEnergy(value: string) {
   if (!value.trim()) return null;
@@ -49,14 +58,25 @@ function parseOptionalNumber(value: string) {
   return Number.isFinite(numeric) ? numeric : null;
 }
 
+function draftValue(current: number, draft: string) {
+  const numeric = Number(draft);
+  return draft.trim() && Number.isFinite(numeric) ? numeric : current;
+}
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
+  const [numberDrafts, setNumberDrafts] = useState<RequiredNumberDrafts>(draftsFromProfile(defaultProfile));
   const [customEnergyKcal, setCustomEnergyKcal] = useState<number | null>(null);
+  const [customEnergyDraft, setCustomEnergyDraft] = useState("");
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    setProfile(loadStoredProfile());
-    setCustomEnergyKcal(loadCustomEnergyTarget());
+    const storedProfile = loadStoredProfile();
+    const storedCustomEnergy = loadCustomEnergyTarget();
+    setProfile(storedProfile);
+    setNumberDrafts(draftsFromProfile(storedProfile));
+    setCustomEnergyKcal(storedCustomEnergy);
+    setCustomEnergyDraft(storedCustomEnergy ? String(storedCustomEnergy) : "");
   }, []);
 
   const summary = useMemo(() => summarizeProfile(profile), [profile]);
@@ -71,7 +91,22 @@ export default function ProfilePage() {
 
   function updateNumber(field: RequiredNumberField, value: string) {
     setSaved(false);
-    setProfile((current) => normalizeProfile({ ...current, [field]: Number(value) }));
+    setNumberDrafts((current) => ({ ...current, [field]: value }));
+    if (!value.trim()) return;
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return;
+    setProfile((current) => normalizeProfile({ ...current, [field]: numeric }));
+  }
+
+  function finishNumber(field: RequiredNumberField, value: string) {
+    const numeric = Number(value);
+    if (!value.trim() || !Number.isFinite(numeric)) {
+      setNumberDrafts((current) => ({ ...current, [field]: String(profile[field]) }));
+      return;
+    }
+    const normalized = normalizeProfile({ ...profile, [field]: numeric });
+    setProfile(normalized);
+    setNumberDrafts((current) => ({ ...current, [field]: String(normalized[field]) }));
   }
 
   function updateOptionalNumber(field: OptionalNumberField, value: string) {
@@ -81,7 +116,19 @@ export default function ProfilePage() {
 
   function updateCustomEnergy(value: string) {
     setSaved(false);
-    setCustomEnergyKcal(normalizeCustomEnergy(value));
+    setCustomEnergyDraft(value);
+    if (!value.trim()) {
+      setCustomEnergyKcal(null);
+      return;
+    }
+    const next = normalizeCustomEnergy(value);
+    if (next !== null) setCustomEnergyKcal(next);
+  }
+
+  function finishCustomEnergy(value: string) {
+    const next = normalizeCustomEnergy(value);
+    setCustomEnergyKcal(next);
+    setCustomEnergyDraft(next ? String(next) : "");
   }
 
   function updateSex(value: ProfileSex) {
@@ -110,10 +157,19 @@ export default function ProfilePage() {
   }
 
   function saveProfile() {
-    const normalized = normalizeProfile(profile);
+    const normalized = normalizeProfile({
+      ...profile,
+      age: draftValue(profile.age, numberDrafts.age),
+      heightCm: draftValue(profile.heightCm, numberDrafts.heightCm),
+      weightKg: draftValue(profile.weightKg, numberDrafts.weightKg)
+    });
+    const normalizedCustomEnergy = normalizeCustomEnergy(customEnergyDraft);
     saveStoredProfile(normalized);
-    saveCustomEnergyTarget(customEnergyKcal);
+    saveCustomEnergyTarget(normalizedCustomEnergy);
     setProfile(normalized);
+    setNumberDrafts(draftsFromProfile(normalized));
+    setCustomEnergyKcal(normalizedCustomEnergy);
+    setCustomEnergyDraft(normalizedCustomEnergy ? String(normalizedCustomEnergy) : "");
     setSaved(true);
     window.setTimeout(() => setSaved(false), 2600);
   }
@@ -164,9 +220,9 @@ export default function ProfilePage() {
           </div>
 
           <div className="formGrid">
-            <label className="field"><span>Âge chronologique</span><input type="number" min="4" max="100" value={profile.age} onChange={(event) => updateNumber("age", event.currentTarget.value)} /></label>
-            <label className="field"><span>Taille</span><input type="number" min="90" max="230" value={profile.heightCm} onChange={(event) => updateNumber("heightCm", event.currentTarget.value)} /><small>cm</small></label>
-            <label className="field"><span>Poids actuel</span><input type="number" min="25" max="250" step="0.1" value={profile.weightKg} onChange={(event) => updateNumber("weightKg", event.currentTarget.value)} /><small>kg</small></label>
+            <label className="field"><span>Âge chronologique</span><input inputMode="numeric" type="text" value={numberDrafts.age} onChange={(event) => updateNumber("age", event.currentTarget.value)} onBlur={(event) => finishNumber("age", event.currentTarget.value)} /></label>
+            <label className="field"><span>Taille</span><input inputMode="numeric" type="text" value={numberDrafts.heightCm} onChange={(event) => updateNumber("heightCm", event.currentTarget.value)} onBlur={(event) => finishNumber("heightCm", event.currentTarget.value)} /><small>cm</small></label>
+            <label className="field"><span>Poids actuel</span><input inputMode="decimal" type="text" value={numberDrafts.weightKg} onChange={(event) => updateNumber("weightKg", event.currentTarget.value)} onBlur={(event) => finishNumber("weightKg", event.currentTarget.value)} /><small>kg</small></label>
             <label className="field"><span>Poids cible</span><input type="number" min="25" max="250" step="0.1" value={profile.targetWeightKg ?? ""} onChange={(event) => updateOptionalNumber("targetWeightKg", event.currentTarget.value)} /><small>vide = poids actuel</small></label>
             <label className="field"><span>Tour de taille</span><input type="number" min="45" max="180" step="0.1" value={profile.waistCm ?? ""} onChange={(event) => updateOptionalNumber("waistCm", event.currentTarget.value)} /><small>cm, utilisé longévité</small></label>
             <label className="field"><span>Sexe</span><select value={profile.sex} onChange={(event) => updateSex(event.currentTarget.value as ProfileSex)}><option value="female">Femme</option><option value="male">Homme</option></select></label>
@@ -182,7 +238,7 @@ export default function ProfilePage() {
 
           <div className="formGrid">
             <label className="field"><span>Objectif</span><select value={profile.objective} onChange={(event) => updateObjective(event.currentTarget.value as Objective)}>{objectiveOptions.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select></label>
-            <label className="field"><span>Calories personnalisées</span><input type="number" min="900" max="6000" placeholder={`${summary.calories}`} value={customEnergyKcal ?? ""} onChange={(event) => updateCustomEnergy(event.currentTarget.value)} /><small>vide = estimation automatique</small></label>
+            <label className="field"><span>Calories personnalisées</span><input inputMode="numeric" type="text" placeholder={`${summary.calories}`} value={customEnergyDraft} onChange={(event) => updateCustomEnergy(event.currentTarget.value)} onBlur={(event) => finishCustomEnergy(event.currentTarget.value)} /><small>vide = estimation automatique</small></label>
             <label className="field"><span>Protéines</span><input type="number" min="0.6" max="2.5" step="0.05" value={profile.proteinFactor ?? ""} onChange={(event) => updateOptionalNumber("proteinFactor", event.currentTarget.value)} /><small>g/kg poids de référence</small></label>
             <label className="field"><span>Glucides</span><input type="number" min="20" max="70" value={profile.carbPercent ?? ""} onChange={(event) => updateOptionalNumber("carbPercent", event.currentTarget.value)} /><small>% des calories</small></label>
             <label className="field"><span>Lipides</span><input type="number" min="15" max="50" value={profile.fatPercent ?? ""} onChange={(event) => updateOptionalNumber("fatPercent", event.currentTarget.value)} /><small>% des calories</small></label>
