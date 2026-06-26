@@ -44,7 +44,7 @@ export default function LongevityPage() {
 
   function updateNumber(field: NumericField, value: string) {
     setSaved(false);
-    setQuestionnaire((current) => normalizeLongevityQuestionnaire({ ...current, [field]: parseOptionalNumber(value) }));
+    setQuestionnaire((current) => ({ ...current, [field]: parseOptionalNumber(value) }));
   }
 
   function updateField<K extends keyof LongevityQuestionnaire>(field: K, value: LongevityQuestionnaire[K]) {
