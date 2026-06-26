@@ -26,7 +26,7 @@ function parseOptionalNumber(value: string) {
 }
 
 function sourceText() {
-  return "Sources institutionnelles : ANSES pour activité physique, renforcement, assouplissement et sédentarité ; OMS pour activité physique, alimentation saine, sel, sucres et graisses ; NHS pour les repères pratiques 150 min modérées / 75 min intenses et renforcement au moins 2 jours par semaine.";
+  return "Sources institutionnelles : ANSES pour activité physique, renforcement, assouplissement et sédentarité ; OMS pour activité physique, alimentation saine, sel, sucres et graisses ; NHS / OMS / American Heart Association pour la tension artérielle : systolique = premier chiffre, tension haute/maximale quand le cœur bat ; diastolique = second chiffre, tension basse/minimale entre les battements ; hypertension clinique à partir de 140/90 mmHg et alerte sévère autour de 180/120 mmHg.";
 }
 
 export default function LongevityPage() {
@@ -134,8 +134,8 @@ export default function LongevityPage() {
           </div>
 
           <div className="formGrid">
-            <label className="field"><span>Tension systolique</span><input type="number" min="70" max="240" value={questionnaire.systolic ?? ""} onChange={(event) => updateNumber("systolic", event.currentTarget.value)} /><small>optionnel</small></label>
-            <label className="field"><span>Tension diastolique</span><input type="number" min="40" max="140" value={questionnaire.diastolic ?? ""} onChange={(event) => updateNumber("diastolic", event.currentTarget.value)} /><small>optionnel</small></label>
+            <label className="field"><span>Tension max — systolique</span><input type="number" min="70" max="240" value={questionnaire.systolic ?? ""} onChange={(event) => updateNumber("systolic", event.currentTarget.value)} /><small>mmHg ; 1er chiffre, pression haute quand le cœur bat</small></label>
+            <label className="field"><span>Tension mini — diastolique</span><input type="number" min="40" max="140" value={questionnaire.diastolic ?? ""} onChange={(event) => updateNumber("diastolic", event.currentTarget.value)} /><small>mmHg ; 2e chiffre, pression basse entre les battements</small></label>
             <label className="field"><span>Fréquence repos</span><input type="number" min="35" max="130" value={questionnaire.restingHeartRate ?? ""} onChange={(event) => updateNumber("restingHeartRate", event.currentTarget.value)} /><small>bpm, optionnel</small></label>
           </div>
 
