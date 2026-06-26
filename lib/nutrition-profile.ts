@@ -14,6 +14,13 @@ export type UserProfile = {
   objective: Objective;
   physiologicalStatus: PhysiologicalStatus;
   referenceMode: ReferenceMode;
+  targetWeightKg?: number | null;
+  waistCm?: number | null;
+  activityMinutesPerWeek?: number | null;
+  proteinFactor?: number | null;
+  carbPercent?: number | null;
+  fatPercent?: number | null;
+  mealsPerDay?: number | null;
   updatedAt?: string;
 };
 
@@ -32,6 +39,18 @@ export type ReferenceSummaryItem = {
   key: string;
   label: string;
   reference: NutrientReference | null;
+};
+
+export type MacroDistribution = {
+  calories: number;
+  referenceWeightKg: number;
+  proteinFactor: number;
+  proteinG: number;
+  carbPercent: number;
+  carbG: number;
+  fatPercent: number;
+  fatG: number;
+  saturatedFatLimitG: number;
 };
 
 export const PROFILE_STORAGE_KEY = "nutriatlas-profile-v1";
@@ -70,13 +89,29 @@ export const defaultProfile: UserProfile = {
   activityLevel: "moderate",
   objective: "maintenance",
   physiologicalStatus: "none",
-  referenceMode: "anses"
+  referenceMode: "anses",
+  targetWeightKg: null,
+  waistCm: null,
+  activityMinutesPerWeek: null,
+  proteinFactor: null,
+  carbPercent: null,
+  fatPercent: null,
+  mealsPerDay: null
 };
 
 function finiteNumber(value: unknown, fallback: number, min: number, max: number) {
   const numeric = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(numeric)) return fallback;
   return Math.min(max, Math.max(min, numeric));
+}
+
+function optionalNumber(value: unknown, min: number, max: number, decimals = 0) {
+  if (value === null || value === undefined || value === "") return null;
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  const clamped = Math.min(max, Math.max(min, numeric));
+  const factor = Math.pow(10, decimals);
+  return Math.round(clamped * factor) / factor;
 }
 
 function optionValue<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
@@ -92,12 +127,19 @@ export function normalizeProfile(input?: Partial<UserProfile> | null): UserProfi
   return {
     age: Math.round(finiteNumber(input?.age, defaultProfile.age, 4, 100)),
     heightCm: Math.round(finiteNumber(input?.heightCm, defaultProfile.heightCm, 90, 230)),
-    weightKg: Math.round(finiteNumber(input?.weightKg, defaultProfile.weightKg, 25, 250) * 10) / 10,
+    weightKg: optionalNumber(input?.weightKg, 25, 250, 1) || defaultProfile.weightKg,
     sex,
     activityLevel: optionValue(input?.activityLevel, activityValues, defaultProfile.activityLevel),
     objective: optionValue(input?.objective, objectiveValues, defaultProfile.objective),
     physiologicalStatus,
     referenceMode: optionValue(input?.referenceMode, referenceModeValues, defaultProfile.referenceMode),
+    targetWeightKg: optionalNumber(input?.targetWeightKg, 25, 250, 1),
+    waistCm: optionalNumber(input?.waistCm, 45, 180, 1),
+    activityMinutesPerWeek: optionalNumber(input?.activityMinutesPerWeek, 0, 2000, 0),
+    proteinFactor: optionalNumber(input?.proteinFactor, 0.6, 2.5, 2),
+    carbPercent: optionalNumber(input?.carbPercent, 20, 70, 0),
+    fatPercent: optionalNumber(input?.fatPercent, 15, 50, 0),
+    mealsPerDay: optionalNumber(input?.mealsPerDay, 1, 8, 0),
     updatedAt: input?.updatedAt
   };
 }
@@ -152,6 +194,51 @@ export function estimateEnergyTarget(input: Partial<UserProfile>) {
   return Math.round(Math.max(minimum, base + objectiveAdjustment[profile.objective]));
 }
 
+function defaultProteinFactor(profile: UserProfile) {
+  if (profile.objective === "performance") return 1.25;
+  if (profile.objective === "loss") return 1.1;
+  if (profile.objective === "longevity") return 1.0;
+  return 0.83;
+}
+
+function defaultCarbPercent(profile: UserProfile) {
+  if (profile.objective === "performance") return 55;
+  if (profile.objective === "loss") return 40;
+  if (profile.objective === "longevity") return 45;
+  return 50;
+}
+
+function defaultFatPercent(profile: UserProfile) {
+  if (profile.objective === "performance") return 30;
+  return 35;
+}
+
+export function referenceWeight(profileInput: Partial<UserProfile>) {
+  const profile = normalizeProfile(profileInput);
+  return profile.targetWeightKg || profile.weightKg;
+}
+
+export function macroDistribution(profileInput: Partial<UserProfile>, caloriesOverride?: number | null): MacroDistribution {
+  const profile = normalizeProfile(profileInput);
+  const calories = caloriesOverride || estimateEnergyTarget(profile);
+  const refWeight = referenceWeight(profile);
+  const proteinFactor = profile.proteinFactor || defaultProteinFactor(profile);
+  const carbPercent = profile.carbPercent || defaultCarbPercent(profile);
+  const fatPercent = profile.fatPercent || defaultFatPercent(profile);
+
+  return {
+    calories,
+    referenceWeightKg: refWeight,
+    proteinFactor,
+    proteinG: Math.round(refWeight * proteinFactor * 10) / 10,
+    carbPercent,
+    carbG: Math.round((calories * carbPercent / 100 / 4) * 10) / 10,
+    fatPercent,
+    fatG: Math.round((calories * fatPercent / 100 / 9) * 10) / 10,
+    saturatedFatLimitG: Math.round((calories * 0.1 / 9) * 10) / 10
+  };
+}
+
 function normalizedKey(key: string) {
   return key
     .toLowerCase()
@@ -165,41 +252,15 @@ function includesAny(key: string, values: string[]) {
   return values.some((value) => key.includes(value));
 }
 
-function isSugarKey(key: string) {
-  return includesAny(key, ["sugar", "sugars", "sucre", "sucres"]);
-}
-
-function isFiberKey(key: string) {
-  return includesAny(key, ["fiber", "fibre", "fibres"]);
-}
-
-function isSaltKey(key: string) {
-  return includesAny(key, ["salt", "sel"]) && !key.includes("selenium");
-}
-
-function isSodiumKey(key: string) {
-  return includesAny(key, ["sodium"]);
-}
-
-function isSaturatedFatKey(key: string) {
-  return (includesAny(key, ["saturated", "sature"]) && includesAny(key, ["fat", "gras", "lipid"]));
-}
-
-function isFatKey(key: string) {
-  return includesAny(key, ["fat", "lipid", "lipide", "matieres_grasses"]);
-}
-
-function isProteinKey(key: string) {
-  return includesAny(key, ["protein", "proteine", "proteines"]);
-}
-
-function isCarbohydrateKey(key: string) {
-  return includesAny(key, ["carbohydrate", "carb", "glucide", "glucides"]);
-}
-
-function isEnergyKcalKey(key: string) {
-  return key.includes("energy") && key.includes("kcal") || key.includes("energie_kcal");
-}
+function isSugarKey(key: string) { return includesAny(key, ["sugar", "sugars", "sucre", "sucres"]); }
+function isFiberKey(key: string) { return includesAny(key, ["fiber", "fibre", "fibres"]); }
+function isSaltKey(key: string) { return includesAny(key, ["salt", "sel"]) && !key.includes("selenium"); }
+function isSodiumKey(key: string) { return includesAny(key, ["sodium"]); }
+function isSaturatedFatKey(key: string) { return includesAny(key, ["saturated", "sature"]) && includesAny(key, ["fat", "gras", "lipid"]); }
+function isFatKey(key: string) { return includesAny(key, ["fat", "lipid", "lipide", "matieres_grasses"]); }
+function isProteinKey(key: string) { return includesAny(key, ["protein", "proteine", "proteines"]); }
+function isCarbohydrateKey(key: string) { return includesAny(key, ["carbohydrate", "carb", "glucide", "glucides"]); }
+function isEnergyKcalKey(key: string) { return (key.includes("energy") && key.includes("kcal")) || key.includes("energie_kcal"); }
 
 function sugarLimit(age: number) {
   if (age >= 13) return 100;
@@ -290,162 +351,43 @@ function euReference(key: string): NutrientReference | null {
 export function roleForNutrient(key: string): NutrientRole {
   const normalized = normalizedKey(key);
   if (isSugarKey(normalized) || isSaltKey(normalized) || isSodiumKey(normalized) || isSaturatedFatKey(normalized)) return "limit";
-  if (
-    isFiberKey(normalized) ||
-    isProteinKey(normalized) ||
-    includesAny(normalized, ["vitamin", "vitamine", "calcium", "iron", "fer", "magnesium", "magnes", "potassium", "selenium", "zinc"])
-  ) return "positive";
+  if (isFiberKey(normalized) || isProteinKey(normalized) || includesAny(normalized, ["vitamin", "vitamine", "calcium", "iron", "fer", "magnesium", "magnes", "potassium", "selenium", "zinc"])) return "positive";
   return "neutral";
 }
 
 export function getReferenceForNutrient(key: string, input?: Partial<UserProfile> | null): NutrientReference | null {
   const profile = normalizeProfile(input);
   const normalized = normalizedKey(key);
+  const macro = macroDistribution(profile);
 
   if (profile.referenceMode === "eu") return euReference(normalized);
 
   if (isEnergyKcalKey(normalized)) {
-    return {
-      target: estimateEnergyTarget(profile),
-      unit: "kcal",
-      role: "neutral",
-      basis: "Besoin énergétique estimé depuis le profil",
-      source: "Mifflin-St Jeor + niveau d’activité"
-    };
+    return { target: macro.calories, unit: "kcal", role: "neutral", basis: "Besoin énergétique estimé depuis le profil", source: "Mifflin-St Jeor + niveau d’activité" };
   }
 
-  if (isSugarKey(normalized)) {
-    return {
-      target: sugarLimit(profile.age),
-      unit: "g",
-      role: "limit",
-      basis: "Maximum sucres totaux hors lactose et galactose",
-      source: "ANSES"
-    };
-  }
-
-  if (isFiberKey(normalized)) {
-    return {
-      target: fiberTarget(profile.age),
-      unit: "g",
-      role: "positive",
-      basis: "Repère fibres alimentaires",
-      source: "ANSES / PNNS"
-    };
-  }
-
-  if (normalized.includes("potassium")) {
-    return {
-      target: potassiumTarget(profile),
-      unit: "mg",
-      role: "positive",
-      basis: "AS potassium selon l’âge et la situation physiologique",
-      source: "ANSES"
-    };
-  }
-
-  if (normalized.includes("magnesium") || normalized.includes("magnes")) {
-    return {
-      target: magnesiumTarget(profile),
-      unit: "mg",
-      role: "positive",
-      basis: "AS magnésium selon l’âge et le sexe",
-      source: "ANSES",
-      upperLimit: 250,
-      upperLimitLabel: "LSS compléments / magnésium ajouté",
-      note: "La LSS ANSES du magnésium ne s’applique pas au magnésium naturellement présent dans les aliments."
-    };
-  }
+  if (isSugarKey(normalized)) return { target: sugarLimit(profile.age), unit: "g", role: "limit", basis: "Maximum sucres totaux hors lactose et galactose", source: "ANSES" };
+  if (isFiberKey(normalized)) return { target: fiberTarget(profile.age), unit: "g", role: "positive", basis: "Repère fibres alimentaires", source: "ANSES / PNNS" };
+  if (normalized.includes("potassium")) return { target: potassiumTarget(profile), unit: "mg", role: "positive", basis: "AS potassium selon l’âge et la situation physiologique", source: "ANSES" };
+  if (normalized.includes("magnesium") || normalized.includes("magnes")) return { target: magnesiumTarget(profile), unit: "mg", role: "positive", basis: "AS magnésium selon l’âge et le sexe", source: "ANSES", upperLimit: 250, upperLimitLabel: "LSS compléments / magnésium ajouté", note: "La LSS ANSES du magnésium ne s’applique pas au magnésium naturellement présent dans les aliments." };
 
   if (isSodiumKey(normalized)) {
     const limit = sodiumUpperLimit(profile);
-    return {
-      target: limit,
-      unit: "mg",
-      role: "limit",
-      basis: "LSS sodium",
-      source: "ANSES",
-      upperLimit: limit,
-      upperLimitLabel: "Limite supérieure de sécurité",
-      note: `AS sodium : ${sodiumAdequateIntake(profile)} mg/j`
-    };
+    return { target: limit, unit: "mg", role: "limit", basis: "LSS sodium", source: "ANSES", upperLimit: limit, upperLimitLabel: "Limite supérieure de sécurité", note: `AS sodium : ${sodiumAdequateIntake(profile)} mg/j` };
   }
 
   if (isSaltKey(normalized)) {
     const saltFromSodiumLimit = Math.round((sodiumUpperLimit(profile) * 2.54 / 1000) * 10) / 10;
-    return {
-      target: saltFromSodiumLimit,
-      unit: "g",
-      role: "limit",
-      basis: "Conversion de la LSS sodium en équivalent sel",
-      source: "ANSES"
-    };
+    return { target: saltFromSodiumLimit, unit: "g", role: "limit", basis: "Conversion de la LSS sodium en équivalent sel", source: "ANSES" };
   }
 
-  if (isSaturatedFatKey(normalized)) {
-    return {
-      target: Math.round((estimateEnergyTarget(profile) * 0.1 / 9) * 10) / 10,
-      unit: "g",
-      role: "limit",
-      basis: "Repère indicatif : 10 % de l’énergie",
-      source: "Profil nutritionnel"
-    };
-  }
+  if (isSaturatedFatKey(normalized)) return { target: macro.saturatedFatLimitG, unit: "g", role: "limit", basis: "Repère indicatif : 10 % de l’énergie", source: "Profil nutritionnel" };
+  if (isProteinKey(normalized)) return { target: macro.proteinG, unit: "g", role: "positive", basis: `${macro.proteinFactor} g/kg sur poids de référence ${macro.referenceWeightKg} kg`, source: "Profil nutritionnel" };
+  if (isFatKey(normalized)) return { target: macro.fatG, unit: "g", role: "neutral", basis: `Repère indicatif : ${macro.fatPercent} % de l’énergie`, source: "Profil nutritionnel" };
+  if (isCarbohydrateKey(normalized)) return { target: macro.carbG, unit: "g", role: "neutral", basis: `Repère indicatif : ${macro.carbPercent} % de l’énergie`, source: "Profil nutritionnel" };
 
-  if (isProteinKey(normalized)) {
-    const multiplier = profile.objective === "performance" ? 1.2 : 0.83;
-    return {
-      target: Math.round(profile.weightKg * multiplier * 10) / 10,
-      unit: "g",
-      role: "positive",
-      basis: "Repère protéique lié au poids",
-      source: "Profil nutritionnel"
-    };
-  }
-
-  if (isFatKey(normalized)) {
-    return {
-      target: Math.round((estimateEnergyTarget(profile) * 0.35 / 9) * 10) / 10,
-      unit: "g",
-      role: "neutral",
-      basis: "Repère indicatif : 35 % de l’énergie",
-      source: "Profil nutritionnel"
-    };
-  }
-
-  if (isCarbohydrateKey(normalized)) {
-    return {
-      target: Math.round((estimateEnergyTarget(profile) * 0.5 / 4) * 10) / 10,
-      unit: "g",
-      role: "neutral",
-      basis: "Repère indicatif : 50 % de l’énergie",
-      source: "Profil nutritionnel"
-    };
-  }
-
-  if (normalized.includes("calcium")) {
-    return {
-      target: calciumTarget(profile),
-      unit: "mg",
-      role: "positive",
-      basis: "RNP calcium selon l’âge",
-      source: "ANSES",
-      upperLimit: profile.age >= 18 ? 2500 : undefined,
-      upperLimitLabel: profile.age >= 18 ? "LSS" : undefined
-    };
-  }
-
-  if (normalized.includes("selenium")) {
-    return {
-      target: seleniumTarget(profile),
-      unit: "µg",
-      role: "positive",
-      basis: "AS sélénium selon l’âge",
-      source: "ANSES",
-      upperLimit: profile.age >= 18 ? 255 : undefined,
-      upperLimitLabel: profile.age >= 18 ? "LSS" : undefined
-    };
-  }
+  if (normalized.includes("calcium")) return { target: calciumTarget(profile), unit: "mg", role: "positive", basis: "RNP calcium selon l’âge", source: "ANSES", upperLimit: profile.age >= 18 ? 2500 : undefined, upperLimitLabel: profile.age >= 18 ? "LSS" : undefined };
+  if (normalized.includes("selenium")) return { target: seleniumTarget(profile), unit: "µg", role: "positive", basis: "AS sélénium selon l’âge", source: "ANSES", upperLimit: profile.age >= 18 ? 255 : undefined, upperLimitLabel: profile.age >= 18 ? "LSS" : undefined };
 
   return null;
 }
@@ -463,12 +405,14 @@ export function formatAmount(value: number, unit: string) {
 export function summarizeProfile(profileInput: Partial<UserProfile>) {
   const profile = normalizeProfile(profileInput);
   const bmi = computeBmi(profile.weightKg, profile.heightCm);
+  const macro = macroDistribution(profile);
   return {
     profile,
     bmi,
     bmiLabel: bmiLabel(bmi),
     bmr: mifflin(profile),
-    calories: estimateEnergyTarget(profile),
+    calories: macro.calories,
+    macro,
     referenceModeLabel: referenceModes.find((mode) => mode.value === profile.referenceMode)?.label || "ANSES personnalisé"
   };
 }
@@ -477,6 +421,10 @@ export function keyReferenceSummary(profileInput: Partial<UserProfile>): Referen
   const profile = normalizeProfile(profileInput);
   return [
     { key: "energy_kcal", label: "Énergie", reference: getReferenceForNutrient("energy_kcal", profile) },
+    { key: "protein_g", label: "Protéines", reference: getReferenceForNutrient("protein_g", profile) },
+    { key: "carbohydrate_g", label: "Glucides", reference: getReferenceForNutrient("carbohydrate_g", profile) },
+    { key: "fat_g", label: "Lipides", reference: getReferenceForNutrient("fat_g", profile) },
+    { key: "saturated_fat_g", label: "Saturés", reference: getReferenceForNutrient("saturated_fat_g", profile) },
     { key: "sugars_g", label: "Sucres", reference: getReferenceForNutrient("sugars_g", profile) },
     { key: "fiber_g", label: "Fibres", reference: getReferenceForNutrient("fiber_g", profile) },
     { key: "magnesium_mg", label: "Magnésium", reference: getReferenceForNutrient("magnesium_mg", profile) },
