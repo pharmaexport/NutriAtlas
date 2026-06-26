@@ -71,14 +71,14 @@ export default function FoodPage({ params }: PageProps) {
         <nav className="nav">
           <a className="brand" href="/">NutriAtlas</a>
           <div className="navLinks">
-            <a href="/search">Recherche</a>
+            <a href="/ciqual">CIQUAL</a>
             <a href="/cumul">Cumul</a>
           </div>
         </nav>
         <section className="foodPage pageSection">
           <p className="eyebrow">Aliment</p>
           <h1>Aliment indisponible.</h1>
-          <p>Retourne à la recherche et sélectionne une proposition.</p>
+          <p>Retourne à CIQUAL et sélectionne une proposition.</p>
         </section>
       </main>
     );
@@ -89,7 +89,7 @@ export default function FoodPage({ params }: PageProps) {
       <nav className="nav">
         <a className="brand" href="/">NutriAtlas</a>
         <div className="navLinks">
-          <a href="/search">Recherche</a>
+          <a href="/ciqual">CIQUAL</a>
           <a href="/cumul">Cumul</a>
           <a href="/profil">Profil</a>
         </div>
