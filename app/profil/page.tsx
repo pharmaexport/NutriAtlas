@@ -111,7 +111,7 @@ export default function ProfilePage() {
 
   function updateOptionalNumber(field: OptionalNumberField, value: string) {
     setSaved(false);
-    setProfile((current) => normalizeProfile({ ...current, [field]: parseOptionalNumber(value) }));
+    setProfile((current) => ({ ...current, [field]: parseOptionalNumber(value) }));
   }
 
   function updateCustomEnergy(value: string) {
