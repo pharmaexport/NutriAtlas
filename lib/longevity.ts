@@ -319,7 +319,7 @@ function deltaFromScore(score: number) {
 }
 
 function confidence(q: LongevityQuestionnaire) {
-  const optionalFilled = [q.waistCm, q.systolic, q.diastolic, q.restingHeartRate].filter(Boolean).length;
+  const optionalFilled = [q.systolic, q.diastolic, q.restingHeartRate].filter(Boolean).length;
   const activityFilled = q.moderateMinutes !== null || q.vigorousMinutes !== null;
   if (optionalFilled >= 3 && activityFilled) return "bonne";
   if (activityFilled) return "moyenne";
