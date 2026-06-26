@@ -1,6 +1,7 @@
 import {
   estimateEnergyTarget,
   getReferenceForNutrient,
+  macroDistribution,
   type NutrientReference,
   type UserProfile
 } from "./nutrition-profile";
@@ -57,8 +58,8 @@ function isCarbohydrate(key: string) {
   return hasAny(key, ["carbohydrate", "carb", "glucide", "glucides"]);
 }
 
-function roundGram(value: number) {
-  return Math.round(value * 10) / 10;
+function isProtein(key: string) {
+  return hasAny(key, ["protein", "proteine", "proteines"]);
 }
 
 export function getReferenceForNutrientWithEnergy(
@@ -67,25 +68,24 @@ export function getReferenceForNutrientWithEnergy(
   customEnergyKcal: number | null
 ): NutrientReference | null {
   const base = getReferenceForNutrient(key, profile);
-  if (!customEnergyKcal) return base;
-
-  const normalized = normalizedKey(key);
   const energy = activeEnergyTarget(profile, customEnergyKcal);
-  const source = "Objectif calories du profil";
+  const macro = macroDistribution(profile, energy);
+  const normalized = normalizedKey(key);
+  const source = customEnergyKcal ? "Objectif calories du profil" : "Profil nutritionnel";
 
   if (isEnergyKcal(normalized)) {
     return {
       target: energy,
       unit: "kcal",
       role: "neutral",
-      basis: "Objectif énergétique journalier saisi",
+      basis: customEnergyKcal ? "Objectif énergétique journalier saisi" : "Besoin énergétique estimé depuis le profil",
       source
     };
   }
 
   if (isSaturatedFat(normalized)) {
     return {
-      target: roundGram((energy * 0.1) / 9),
+      target: macro.saturatedFatLimitG,
       unit: "g",
       role: "limit",
       basis: "Repère indicatif : 10 % de l’énergie",
@@ -93,22 +93,32 @@ export function getReferenceForNutrientWithEnergy(
     };
   }
 
+  if (isProtein(normalized)) {
+    return {
+      target: macro.proteinG,
+      unit: "g",
+      role: "positive",
+      basis: `${macro.proteinFactor} g/kg sur poids de référence ${macro.referenceWeightKg} kg`,
+      source
+    };
+  }
+
   if (isFat(normalized)) {
     return {
-      target: roundGram((energy * 0.35) / 9),
+      target: macro.fatG,
       unit: "g",
       role: "neutral",
-      basis: "Repère indicatif : 35 % de l’énergie",
+      basis: `Repère indicatif : ${macro.fatPercent} % de l’énergie`,
       source
     };
   }
 
   if (isCarbohydrate(normalized)) {
     return {
-      target: roundGram((energy * 0.5) / 4),
+      target: macro.carbG,
       unit: "g",
       role: "neutral",
-      basis: "Repère indicatif : 50 % de l’énergie",
+      basis: `Repère indicatif : ${macro.carbPercent} % de l’énergie`,
       source
     };
   }
