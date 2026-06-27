@@ -144,6 +144,14 @@ function numberOrNull(value: unknown, min: number, max: number, decimals = 0) {
   return Math.round(clamp(numeric, min, max) * factor) / factor;
 }
 
+function freeNumberOrNull(value: unknown, decimals = 0) {
+  if (value === null || value === undefined || value === "") return null;
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  const factor = Math.pow(10, decimals);
+  return Math.round(numeric * factor) / factor;
+}
+
 function optionValue<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
   return allowed.includes(value as T) ? (value as T) : fallback;
 }
@@ -171,7 +179,7 @@ export function normalizeLongevityQuestionnaire(input?: Partial<LongevityQuestio
     sugaryDrinksPerWeek: numberOrNull(input?.sugaryDrinksPerWeek, 0, 50),
     systolic: numberOrNull(input?.systolic, 70, 240),
     diastolic: numberOrNull(input?.diastolic, 40, 140),
-    restingHeartRate: numberOrNull(input?.restingHeartRate, 35, 130)
+    restingHeartRate: freeNumberOrNull(input?.restingHeartRate)
   };
 }
 
@@ -290,7 +298,7 @@ function scoreVitals(q: LongevityQuestionnaire) {
     score += 2;
   }
 
-  if (q.restingHeartRate) {
+  if (q.restingHeartRate !== null) {
     if (q.restingHeartRate >= 50 && q.restingHeartRate <= 70) score += 3;
     else if (q.restingHeartRate < 85) score += 2;
     else score += 1;
@@ -319,7 +327,7 @@ function deltaFromScore(score: number) {
 }
 
 function confidence(q: LongevityQuestionnaire) {
-  const optionalFilled = [q.systolic, q.diastolic, q.restingHeartRate].filter(Boolean).length;
+  const optionalFilled = [q.systolic, q.diastolic, q.restingHeartRate].filter((value) => value !== null).length;
   const activityFilled = q.moderateMinutes !== null || q.vigorousMinutes !== null;
   if (optionalFilled >= 3 && activityFilled) return "bonne";
   if (activityFilled) return "moyenne";
