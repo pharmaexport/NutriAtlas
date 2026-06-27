@@ -22,25 +22,34 @@ OUTPUT_PATH = GENERATED_DIR / "ciqual-search-index.json"
 NUTRIENT_MAP = {
     "energy_kcal": [
         "Energie, Règlement UE N° 1169 2011 (kcal 100 g)",
+        "Energie, Règlement UE N° 1169/2011 (kcal/100 g)",
         "Energie, N x facteur Jones, avec fibres (kcal 100 g)",
+        "Energie, N x facteur Jones, avec fibres (kcal/100 g)",
     ],
     "protein_g": [
         "Protéines, N x facteur de Jones (g 100 g)",
+        "Protéines, N x facteur de Jones (g/100 g)",
         "Protéines, N x 6.25 (g 100 g)",
+        "Protéines, N x 6.25 (g/100 g)",
     ],
-    "carbs_g": ["Glucides (g 100 g)"],
-    "fat_g": ["Lipides (g 100 g)"],
-    "sugars_g": ["Sucres (g 100 g)"],
-    "fiber_g": ["Fibres alimentaires (g 100 g)"],
-    "salt_g": ["Sel chlorure de sodium (g 100 g)"],
-    "calcium_mg": ["Calcium (mg 100 g)"],
-    "iron_mg": ["Fer (mg 100 g)"],
-    "magnesium_mg": ["Magnésium (mg 100 g)"],
-    "potassium_mg": ["Potassium (mg 100 g)"],
-    "sodium_mg": ["Sodium (mg 100 g)"],
-    "vitamin_c_mg": ["Vitamine C (mg 100 g)"],
-    "vitamin_d_ug": ["Vitamine D (µg 100 g)"],
-    "folate_ug": ["Vitamine B9 ou Folates totaux (µg 100 g)", "Folates intrinsèques (µg 100 g)"],
+    "carbs_g": ["Glucides (g 100 g)", "Glucides (g/100 g)"],
+    "fat_g": ["Lipides (g 100 g)", "Lipides (g/100 g)"],
+    "sugars_g": ["Sucres (g 100 g)", "Sucres (g/100 g)"],
+    "fiber_g": ["Fibres alimentaires (g 100 g)", "Fibres alimentaires (g/100 g)"],
+    "salt_g": ["Sel chlorure de sodium (g 100 g)", "Sel chlorure de sodium (g/100 g)"],
+    "calcium_mg": ["Calcium (mg 100 g)", "Calcium (mg/100 g)"],
+    "iron_mg": ["Fer (mg 100 g)", "Fer (mg/100 g)"],
+    "magnesium_mg": ["Magnésium (mg 100 g)", "Magnésium (mg/100 g)"],
+    "potassium_mg": ["Potassium (mg 100 g)", "Potassium (mg/100 g)"],
+    "sodium_mg": ["Sodium (mg 100 g)", "Sodium (mg/100 g)"],
+    "vitamin_c_mg": ["Vitamine C (mg 100 g)", "Vitamine C (mg/100 g)"],
+    "vitamin_d_ug": ["Vitamine D (µg 100 g)", "Vitamine D (µg/100 g)", "Vitamine D (ug/100 g)"],
+    "folate_ug": [
+        "Vitamine B9 ou Folates totaux (µg 100 g)",
+        "Vitamine B9 ou Folates totaux (µg/100 g)",
+        "Folates intrinsèques (µg 100 g)",
+        "Folates intrinsèques (µg/100 g)",
+    ],
 }
 
 
@@ -160,6 +169,14 @@ def rounded(value: Any) -> float | None:
         return None
 
 
+def find_nutrient_id(all_nutrients: dict[int, sqlite3.Row], source_names: list[str]) -> int | None:
+    wanted = {normalize(name) for name in source_names}
+    for nutrient_id, nutrient in all_nutrients.items():
+        if normalize(nutrient_source_column(nutrient)) in wanted:
+            return nutrient_id
+    return None
+
+
 def build_index() -> dict[str, Any]:
     ensure_sqlite()
     conn = sqlite3.connect(SQLITE_PATH)
@@ -169,13 +186,13 @@ def build_index() -> dict[str, Any]:
 
     nutrient_ids: dict[str, int] = {}
     for key, source_names in NUTRIENT_MAP.items():
-        placeholders = ",".join("?" for _ in source_names)
-        row = conn.execute(
-            f"SELECT id FROM nutrients WHERE source_column_name IN ({placeholders}) ORDER BY id LIMIT 1",
-            source_names,
-        ).fetchone()
-        if row:
-            nutrient_ids[key] = int(row["id"])
+        nutrient_id = find_nutrient_id(all_nutrients, source_names)
+        if nutrient_id:
+            nutrient_ids[key] = nutrient_id
+
+    missing_summary_keys = sorted(set(NUTRIENT_MAP) - set(nutrient_ids))
+    if missing_summary_keys:
+        print(f"Warning: missing summary nutrients: {', '.join(missing_summary_keys)}")
 
     summary_key_by_nutrient_id = {nutrient_id: key for key, nutrient_id in nutrient_ids.items()}
 
