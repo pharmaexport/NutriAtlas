@@ -244,6 +244,14 @@ function DailyRecapTable({ rows }: { rows: DisplayRow[] }) {
   );
 }
 
+function rankingGradient(grade: NutritionRankingEstimate["grade"] | "unknown") {
+  if (grade === "A" || grade === "B") return "linear-gradient(135deg, #1f7a39, #7fb449)";
+  if (grade === "C") return "linear-gradient(135deg, #e1b928, #f2d767)";
+  if (grade === "D") return "linear-gradient(135deg, #d98024, #f0b15a)";
+  if (grade === "E") return "linear-gradient(135deg, #b8322d, #e0594d)";
+  return "linear-gradient(135deg, #7a867e, #aeb7af)";
+}
+
 function NutritionRankingPictogram({ nutritionRanking }: { nutritionRanking: NutritionRankingEstimate | null }) {
   const grade = nutritionRanking?.grade || "unknown";
   const ariaLabel = nutritionRanking
@@ -251,9 +259,46 @@ function NutritionRankingPictogram({ nutritionRanking }: { nutritionRanking: Nut
     : "Ranking nutritionnel indisponible";
 
   return (
-    <aside className="nutritionRankingPictogram" data-grade={grade} aria-label={ariaLabel}>
-      <span>Ranking</span>
-      <strong>{nutritionRanking?.grade || "–"}</strong>
+    <aside
+      aria-label={ariaLabel}
+      style={{
+        position: "absolute",
+        top: "22px",
+        right: "22px",
+        zIndex: 2,
+        display: "grid",
+        placeItems: "center",
+        width: "138px",
+        minHeight: "132px",
+        padding: "13px 12px 12px",
+        borderRadius: "30px",
+        border: "1px solid rgba(16, 35, 27, 0.12)",
+        background: "rgba(255,255,255,0.9)",
+        color: "#10231b",
+        textAlign: "center",
+        boxShadow: "0 20px 52px rgba(16, 35, 27, 0.12)"
+      }}
+    >
+      <span style={{ color: "#526158", fontSize: "0.72rem", fontWeight: 950, letterSpacing: "0.08em", textTransform: "uppercase" }}>Ranking</span>
+      <strong
+        style={{
+          display: "grid",
+          placeItems: "center",
+          width: "78px",
+          height: "78px",
+          margin: "7px 0 0",
+          borderRadius: "26px",
+          background: rankingGradient(grade),
+          color: grade === "C" ? "#352d00" : "#ffffff",
+          fontSize: "3.25rem",
+          lineHeight: 1,
+          fontWeight: 1000,
+          letterSpacing: "-0.08em",
+          boxShadow: "inset 0 -12px 24px rgba(0,0,0,0.12)"
+        }}
+      >
+        {nutritionRanking?.grade || "–"}
+      </strong>
     </aside>
   );
 }
