@@ -119,6 +119,21 @@ h2 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.1rem); line-height: 0.98; letter
 .scenarioGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .scenarioGrid article { border-radius: 24px; padding: 20px; }
 .scenarioGrid strong { display: block; margin-bottom: 8px; color: #10231b; font-size: 1.08rem; }
+.foodHeroCard { position: relative; min-height: 250px; margin: 44px 0 18px; padding: clamp(28px, 5vw, 58px); border: 1px solid rgba(16, 35, 27, 0.12); border-radius: 38px; background: linear-gradient(135deg, rgba(255,255,255,0.86), rgba(238,245,232,0.78)); box-shadow: 0 24px 80px rgba(16, 35, 27, 0.08); overflow: hidden; }
+.foodHeroCard::after { content: ""; position: absolute; right: -120px; bottom: -170px; width: 360px; height: 360px; border-radius: 999px; background: radial-gradient(circle, rgba(134, 182, 93, 0.28), transparent 66%); pointer-events: none; }
+.foodHeroPremium { display: flex; align-items: flex-end; justify-content: space-between; gap: 26px; }
+.foodTitleBlock { position: relative; z-index: 1; max-width: min(760px, calc(100% - 190px)); }
+.foodTitleBlock p:last-child { margin: 20px 0 0; color: #536158; font-weight: 850; line-height: 1.5; }
+.nutriScorePictogram { position: absolute; top: 22px; right: 22px; z-index: 2; display: grid; place-items: center; width: 138px; min-height: 150px; padding: 13px 12px 12px; border-radius: 30px; border: 1px solid rgba(16, 35, 27, 0.12); background: rgba(255,255,255,0.9); color: #10231b; text-align: center; box-shadow: 0 20px 52px rgba(16, 35, 27, 0.12); }
+.nutriScorePictogram span { color: #526158; font-size: 0.72rem; font-weight: 950; letter-spacing: 0.08em; text-transform: uppercase; }
+.nutriScorePictogram strong { display: grid; place-items: center; width: 78px; height: 78px; margin: 7px 0 5px; border-radius: 26px; color: #ffffff; font-size: 3.25rem; line-height: 1; font-weight: 1000; letter-spacing: -0.08em; box-shadow: inset 0 -12px 24px rgba(0,0,0,0.12); }
+.nutriScorePictogram small { color: #10231b; font-size: 0.82rem; font-weight: 950; }
+.nutriScorePictogram em { margin-top: 2px; color: #66746c; font-size: 0.66rem; font-style: normal; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; }
+.nutriScorePictogram[data-grade="A"] strong, .nutriScorePictogram[data-grade="B"] strong { background: linear-gradient(135deg, #1f7a39, #7fb449); }
+.nutriScorePictogram[data-grade="C"] strong { background: linear-gradient(135deg, #e1b928, #f2d767); color: #352d00; }
+.nutriScorePictogram[data-grade="D"] strong { background: linear-gradient(135deg, #d98024, #f0b15a); }
+.nutriScorePictogram[data-grade="E"] strong { background: linear-gradient(135deg, #b8322d, #e0594d); }
+.nutriScorePictogram[data-grade="unknown"] strong { background: linear-gradient(135deg, #7a867e, #aeb7af); }
 @media (max-width: 900px) {
   .nav { align-items: flex-start; border-radius: 24px; }
   .navLinks { display: none; }
@@ -133,4 +148,8 @@ h2 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.1rem); line-height: 0.98; letter
   .searchBox button { grid-column: 1 / -1; }
   .featureGrid, .metricGrid, .scenarioGrid, .priorityGrid { grid-template-columns: 1fr; }
   .resultCard { align-items: flex-start; }
+  .foodHeroPremium { display: grid; align-items: start; padding-top: 172px; }
+  .foodTitleBlock { max-width: 100%; }
+  .nutriScorePictogram { left: 22px; right: auto; width: 126px; min-height: 134px; }
+  .nutriScorePictogram strong { width: 66px; height: 66px; font-size: 2.75rem; border-radius: 22px; }
 }
