@@ -46,6 +46,10 @@ function isEnergyKcal(key: string) {
   return (key.includes("energy") || key.includes("energie")) && key.includes("kcal");
 }
 
+function isEnergyKj(key: string) {
+  return (key.includes("energy") || key.includes("energie")) && (key.includes("kj") || key.includes("kilojoule"));
+}
+
 function isFat(key: string) {
   return hasAny(key, ["fat", "lipid", "lipide", "matieres_grasses"]);
 }
@@ -67,10 +71,15 @@ export function getReferenceForNutrientWithEnergy(
   profile: UserProfile,
   customEnergyKcal: number | null
 ): NutrientReference | null {
+  const normalized = normalizedKey(key);
+
+  // CIQUAL also exposes energy in kJ. Do not try to compare kJ to kcal or to
+  // fibre targets when the source label contains "avec fibres".
+  if (isEnergyKj(normalized)) return null;
+
   const base = getReferenceForNutrient(key, profile);
   const energy = activeEnergyTarget(profile, customEnergyKcal);
   const macro = macroDistribution(profile, energy);
-  const normalized = normalizedKey(key);
   const source = customEnergyKcal ? "Objectif calories du profil" : "Profil nutritionnel";
 
   if (isEnergyKcal(normalized)) {
