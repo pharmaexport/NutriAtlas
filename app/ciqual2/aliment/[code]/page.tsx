@@ -96,6 +96,11 @@ function isMainFat(text: string) {
   return includesAny(text, ["fat_g", "lipides_g", "lipides"]) && !includesAny(text, ["acide_gras", "ag_", "sature", "monoinsature", "polyinsature", "cholesterol", "omega", "epa", "dha"]);
 }
 
+function isSecondaryEnergyKj(row: NutrientRow) {
+  const text = nutrientText(row);
+  return includesAny(text, ["energie", "energy"]) && (row.unit === "kJ" || includesAny(text, ["_kj", "kj_100_g"]));
+}
+
 function nutrientPriority(row: NutrientRow) {
   const text = nutrientText(row);
   const vitaminRank = firstMatchingOrder(text, vitaminOrder);
@@ -135,12 +140,14 @@ function rowsFor(food: { nutrients: Record<string, number>; fullNutrients?: Full
 }
 
 function detailRowsFor(food: { nutrients: Record<string, number>; fullNutrients?: FullNutrient[] }) {
-  return rowsFor(food).map((row) => ({
-    key: row.key,
-    label: row.label,
-    unit: row.unit,
-    per100g: row.value
-  }));
+  return rowsFor(food)
+    .filter((row) => !isSecondaryEnergyKj(row))
+    .map((row) => ({
+      key: row.key,
+      label: row.label,
+      unit: row.unit,
+      per100g: row.value
+    }));
 }
 
 function selectedPortion(raw?: string) {
