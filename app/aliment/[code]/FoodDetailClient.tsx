@@ -28,9 +28,9 @@ type NutrientItem = {
   role?: NutrientRole;
   sourceColumnName?: string | null;
 };
-type PortionOption = { label: string; grams: number; description: string; };
+type PortionOption = { label: string; grams: number; description: string };
 type Props = {
-  food: { code: string; name: string; group: string; subgroup?: string | null; };
+  food: { code: string; name: string; group: string; subgroup?: string | null };
   portions: PortionOption[];
   nutrients: NutrientItem[];
 };
@@ -40,7 +40,7 @@ type CumulItem = {
   foodName: string;
   portionLabel: string;
   grams: number;
-  nutrients: Array<{ key: string; label: string; unit: string; value: number; target?: number; }>;
+  nutrients: Array<{ key: string; label: string; unit: string; value: number; target?: number }>;
   createdAt: string;
 };
 type DisplayRow = NutrientItem & {
@@ -107,9 +107,7 @@ function overflowLabel(percent: number | null, role: NutrientRole) {
 }
 
 function percentChipStyle(percent: number | null, role: NutrientRole) {
-  if (percent === null) {
-    return { background: "rgba(255,255,255,0.62)", border: "1px solid rgba(16, 35, 27, 0.08)", color: "#6b766f" };
-  }
+  if (percent === null) return { background: "rgba(255,255,255,0.62)", border: "1px solid rgba(16, 35, 27, 0.08)", color: "#6b766f" };
 
   if (role === "limit") {
     if (percent >= 100) return { background: "#fde7e3", border: "1px solid #d85b49", color: "#8a1f12" };
@@ -160,8 +158,22 @@ function hasFruitVegetableLegumeSignal(food: Props["food"]) {
   return text.includes("fruit") || text.includes("legume") || text.includes("legumineuse") || text.includes("lentille") || text.includes("pois chiche") || text.includes("haricot") || text.includes("feve");
 }
 
+function hasDrinkSignal(food: Props["food"]) {
+  const text = normalizeText(`${food.name} ${food.group} ${food.subgroup || ""}`);
+  return text.includes("boisson") || text.includes("cola") || text.includes("soda") || text.includes("limonade") || text.includes("nectar") || text.includes("jus") || text.includes("eau");
+}
+
+function drinkGradeFromSugars(sugars: number, energyKcal: number | null): RankingGrade {
+  if (sugars >= 8) return "E";
+  if (sugars >= 5) return "D";
+  if (sugars >= 2) return "C";
+  if (sugars > 0 || (energyKcal !== null && energyKcal > 5)) return "B";
+  return "A";
+}
+
 function computeRanking(rows: DisplayRow[], food: Props["food"]): RankingEstimate | null {
   const fruitVegetableLegume = hasFruitVegetableLegumeSignal(food);
+  const drink = hasDrinkSignal(food);
   const protein = rowValue(rows, ["protein_g"], ["proteines"]);
   const carbs = rowValue(rows, ["carbs_g"], ["glucides"]);
   const fat = rowValue(rows, ["fat_g"], ["lipides"]);
@@ -172,6 +184,12 @@ function computeRanking(rows: DisplayRow[], food: Props["food"]): RankingEstimat
   const sugars = rowValue(rows, ["sugars_g"], ["sucres"]);
   const sodiumMg = rowValue(rows, ["sodium_mg"], ["sodium"]);
   const salt = rowValue(rows, ["salt_g"], ["sel chlorure de sodium"]) ?? (sodiumMg !== null ? (sodiumMg * 2.5) / 1000 : null);
+
+  if (drink) {
+    if (sugars !== null) return { grade: drinkGradeFromSugars(sugars, energyKcal), confidence: "moyenne" };
+    if (energyKcal !== null && energyKcal <= 5) return { grade: "A", confidence: "faible" };
+    return null;
+  }
 
   if (energyKj === null || saturatedFat === null || sugars === null || salt === null) {
     return fruitVegetableLegume ? { grade: "A", confidence: "faible" } : null;
@@ -185,9 +203,10 @@ function computeRanking(rows: DisplayRow[], food: Props["food"]): RankingEstimat
 
   const fiber = rowValue(rows, ["fiber_g"], ["fibres alimentaires"]) ?? 0;
   const safeProtein = protein ?? 0;
+  const fruitVegetableLegumeContribution = fruitVegetableLegume ? 5 : 0;
   const favorable = unfavorable < 11
-    ? 5 + thresholdCount(fiber, FIBER_THRESHOLDS_G) + thresholdCount(safeProtein, PROTEIN_THRESHOLDS_G)
-    : 5 + thresholdCount(fiber, FIBER_THRESHOLDS_G);
+    ? fruitVegetableLegumeContribution + thresholdCount(fiber, FIBER_THRESHOLDS_G) + thresholdCount(safeProtein, PROTEIN_THRESHOLDS_G)
+    : fruitVegetableLegumeContribution + thresholdCount(fiber, FIBER_THRESHOLDS_G);
 
   return {
     grade: gradeFromTotal(unfavorable - favorable),
@@ -304,13 +323,7 @@ function ConsumerSnapshot({ items, isFruitVeg }: { items: SnapshotItem[]; isFrui
   if (items.length === 0) return null;
 
   return (
-    <section
-      className="highlightCard"
-      style={{
-        margin: "0 0 18px",
-        background: "rgba(255,255,255,0.82)"
-      }}
-    >
+    <section className="highlightCard" style={{ margin: "0 0 18px", background: "rgba(255,255,255,0.82)" }}>
       <span>À retenir</span>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "0.7rem" }}>
         {items.map((item) => (
@@ -425,39 +438,14 @@ function consumerRecapRows(rows: DisplayRow[]): RecapRow[] {
 
 function DailyRecapTable({ rows }: { rows: RecapRow[] }) {
   return (
-    <section
-      className="dailyRecapTable"
-      style={{
-        margin: "18px 0 22px",
-        border: "1px solid rgba(16, 35, 27, 0.12)",
-        borderRadius: "28px",
-        background: "rgba(255, 255, 255, 0.72)",
-        boxShadow: "0 18px 54px rgba(16, 35, 27, 0.06)",
-        overflow: "hidden"
-      }}
-    >
+    <section className="dailyRecapTable" style={{ margin: "18px 0 22px", border: "1px solid rgba(16, 35, 27, 0.12)", borderRadius: "28px", background: "rgba(255, 255, 255, 0.72)", boxShadow: "0 18px 54px rgba(16, 35, 27, 0.06)", overflow: "hidden" }}>
       <div style={{ padding: "18px 18px 10px" }}>
         <span style={{ display: "block", color: "#5d6b62", fontSize: "0.78rem", fontWeight: 950, letterSpacing: "0.08em", textTransform: "uppercase" }}>Repères utiles</span>
         <strong style={{ display: "block", marginTop: "4px", color: "#10231b", fontSize: "1.15rem" }}>Valeurs réelles et % cible jour</strong>
         <small style={{ display: "block", marginTop: "6px", color: "#6a766f", fontWeight: 800 }}>Lecture simplifiée : macronutriments, “dont”, minéraux et vitamines utiles au quotidien.</small>
       </div>
       <div style={{ width: "100%" }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) minmax(58px, 80px) minmax(52px, 72px)",
-            gap: "0.45rem",
-            alignItems: "center",
-            padding: "10px 10px 12px",
-            color: "#5d6b62",
-            fontSize: "0.68rem",
-            fontWeight: 950,
-            letterSpacing: "0.05em",
-            textTransform: "uppercase",
-            borderTop: "1px solid rgba(16, 35, 27, 0.08)",
-            borderBottom: "1px solid rgba(16, 35, 27, 0.08)"
-          }}
-        >
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(58px, 80px) minmax(52px, 72px)", gap: "0.45rem", alignItems: "center", padding: "10px 10px 12px", color: "#5d6b62", fontSize: "0.68rem", fontWeight: 950, letterSpacing: "0.05em", textTransform: "uppercase", borderTop: "1px solid rgba(16, 35, 27, 0.08)", borderBottom: "1px solid rgba(16, 35, 27, 0.08)" }}>
           <span>Nutriment</span>
           <span style={{ textAlign: "right" }}>Valeur</span>
           <span style={{ textAlign: "right" }}>% jour</span>
@@ -465,37 +453,12 @@ function DailyRecapTable({ rows }: { rows: RecapRow[] }) {
         {rows.map((nutrient) => {
           const chip = percentChipStyle(nutrient.percent, nutrient.role);
           return (
-            <div
-              key={`recap-${nutrient.key}-${nutrient.displayLabel}`}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "minmax(0, 1fr) minmax(58px, 80px) minmax(52px, 72px)",
-                gap: "0.45rem",
-                alignItems: "center",
-                minWidth: 0,
-                borderTop: "1px solid rgba(16, 35, 27, 0.08)",
-                padding: "12px 10px"
-              }}
-            >
+            <div key={`recap-${nutrient.key}-${nutrient.displayLabel}`} style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(58px, 80px) minmax(52px, 72px)", gap: "0.45rem", alignItems: "center", minWidth: 0, borderTop: "1px solid rgba(16, 35, 27, 0.08)", padding: "12px 10px" }}>
               <span style={{ color: "#10231b", fontWeight: nutrient.isSub ? 800 : 900, lineHeight: 1.2, overflowWrap: "anywhere", minWidth: 0, paddingLeft: nutrient.isSub ? "0.7rem" : 0 }}>{nutrient.displayLabel}{nutrient.isDerived ? "*" : ""}</span>
               <strong style={{ color: "#10231b", fontWeight: 950, textAlign: "right", lineHeight: 1.15, overflowWrap: "anywhere" }}>{amountLabel(nutrient.value, nutrient.unit)}</strong>
               <span style={{ textAlign: "right" }}>
                 {nutrient.percent !== null ? (
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      minWidth: "50px",
-                      padding: "0.34rem 0.5rem",
-                      borderRadius: "999px",
-                      background: chip.background,
-                      border: chip.border,
-                      color: chip.color,
-                      fontWeight: 950,
-                      whiteSpace: "nowrap"
-                    }}
-                  >
+                  <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "50px", padding: "0.34rem 0.5rem", borderRadius: "999px", background: chip.background, border: chip.border, color: chip.color, fontWeight: 950, whiteSpace: "nowrap" }}>
                     {percentOnlyLabel(nutrient.percent)}
                   </span>
                 ) : null}
@@ -602,20 +565,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
         <p>{portion.description}</p>
       </div>
 
-      <div
-        className="portionEnergySummary"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "1rem",
-          padding: "1.35rem 1.45rem",
-          borderRadius: "28px",
-          border: "1px solid rgba(16, 35, 27, 0.10)",
-          background: "rgba(255,255,255,0.72)",
-          boxShadow: "0 18px 54px rgba(16, 35, 27, 0.06)",
-          marginBottom: "18px"
-        }}
-      >
+      <div className="portionEnergySummary" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", padding: "1.35rem 1.45rem", borderRadius: "28px", border: "1px solid rgba(16, 35, 27, 0.10)", background: "rgba(255,255,255,0.72)", boxShadow: "0 18px 54px rgba(16, 35, 27, 0.06)", marginBottom: "18px" }}>
         <div>
           <span style={{ display: "block", color: "#66746c", fontWeight: 950 }}>Portion sélectionnée</span>
           <strong style={{ display: "block", fontSize: "2.15rem", lineHeight: 1.05, color: "#10231b", marginTop: "0.35rem" }}>{portion.grams} g</strong>
