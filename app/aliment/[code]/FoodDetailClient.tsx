@@ -60,21 +60,48 @@ function ProgressVisual({ nutrient }: { nutrient: DisplayRow }) {
   const currentLabel = amountLabel(nutrient.value, nutrient.unit);
 
   return (
-    <div className="progressVisual">
-      <div className="progressScale" aria-hidden="true">
-        <span className="currentValuePill" style={{ left: `${safeCursorPercent}%` }}>
+    <div className="progressVisual" style={{ position: "relative", paddingTop: "2.65rem", marginTop: "1rem" }}>
+      <div className="progressScale" style={{ position: "absolute", inset: "0 0 auto 0", height: "2.25rem", pointerEvents: "none" }} aria-hidden="true">
+        <span
+          className="currentValuePill"
+          style={{
+            position: "absolute",
+            left: `${safeCursorPercent}%`,
+            top: 0,
+            transform: "translateX(-50%)",
+            padding: "0.28rem 0.58rem",
+            borderRadius: "999px",
+            background: "rgba(238, 245, 232, 0.98)",
+            border: "1px solid rgba(16, 35, 27, 0.09)",
+            color: "#10231b",
+            fontWeight: 950,
+            fontSize: "0.82rem",
+            whiteSpace: "nowrap"
+          }}
+        >
           {currentLabel}
         </span>
         {targetLabel ? (
-          <span className="targetValuePill" style={{ right: `${targetShiftPx}px` }}>
-            <strong>{targetLabel}</strong>
-            <small>100 %</small>
+          <span
+            className="targetValuePill"
+            style={{
+              position: "absolute",
+              right: `${targetShiftPx}px`,
+              top: 0,
+              textAlign: "right",
+              color: "#31493d",
+              fontWeight: 950,
+              whiteSpace: "nowrap"
+            }}
+          >
+            <strong style={{ display: "block", fontSize: "0.86rem", lineHeight: 1 }}>{targetLabel}</strong>
+            <small style={{ display: "block", marginTop: "0.15rem", fontSize: "0.66rem", lineHeight: 1, opacity: 0.75 }}>100 %</small>
           </span>
         ) : null}
       </div>
-      <div className="progressTrack">
-        <i style={{ width: `${clampedPercent}%` }} />
-        {overflowPercent > 0 ? <b style={{ width: `${Math.min(overflowPercent, 100)}%` }} /> : null}
+      <div className="progressTrack" style={{ position: "relative", height: "14px", borderRadius: "999px", background: "rgba(237, 244, 232, 0.95)", border: "1px solid rgba(16, 35, 27, 0.08)", overflow: "hidden" }}>
+        <i style={{ position: "absolute", inset: "0 auto 0 0", width: `${clampedPercent}%`, borderRadius: "999px", background: "linear-gradient(90deg, #2e7d3f, #86b65d)" }} />
+        {overflowPercent > 0 ? <b style={{ position: "absolute", inset: "0 0 0 auto", width: `${Math.min(overflowPercent, 100)}%`, borderRadius: "999px", background: "linear-gradient(90deg, #b7c96a, #d18b52)" }} /> : null}
       </div>
     </div>
   );
