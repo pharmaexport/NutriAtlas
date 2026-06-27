@@ -88,6 +88,25 @@ function nutrientText(row: NutrientRow) {
   return normalize(`${row.key} ${row.label} ${row.sourceColumnName || ""}`);
 }
 
+function cleanDisplayLabel(row: NutrientRow) {
+  const text = nutrientText(row);
+
+  if (includesAny(text, ["energy", "energie"]) && row.unit === "kcal") return "Énergie";
+  if (includesAny(text, ["proteine", "proteines", "protein"])) return "Protéines";
+  if (includesAny(text, ["glucide", "glucides", "carbohydrate", "carbs_g"]) && !includesAny(text, ["amidon", "glucose", "fructose", "lactose", "maltose", "galactose", "polyol"])) return "Glucides";
+  if (isTotalSugar(text)) return "Sucres";
+  if (isMainFat(text)) return "Lipides";
+  if (includesAny(text, ["sature", "saturated"]) && includesAny(text, ["gras", "fat", "ag_", "acide_gras"])) return "Acides gras saturés";
+  if (includesAny(text, ["monoinsature", "monounsaturated"])) return "Acides gras mono-insaturés";
+  if (includesAny(text, ["polyinsature", "polyunsaturated"])) return "Acides gras poly-insaturés";
+  if (includesAny(text, ["fiber", "fibre", "fibres"])) return "Fibres";
+
+  return row.label
+    .replace(/\s*\((kcal|kj|g|mg|µg|ug)\s*\/?\s*100\s*g\)\s*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function isTotalSugar(text: string) {
   return includesAny(text, ["sugars_g", "sucres_g", "sucres", "sugar_total", "sugars_total"]) && !includesAny(text, ["glucose", "fructose", "lactose", "maltose", "galactose"]);
 }
@@ -101,6 +120,18 @@ function isSecondaryEnergyKj(row: NutrientRow) {
   return includesAny(text, ["energie", "energy"]) && (row.unit === "kJ" || includesAny(text, ["_kj", "kj_100_g"]));
 }
 
+function canonicalNutrientKey(row: NutrientRow) {
+  const text = nutrientText(row);
+  if (includesAny(text, ["energy", "energie"]) && row.unit === "kcal") return "energy_kcal";
+  if (includesAny(text, ["proteine", "proteines", "protein"])) return "protein";
+  if (includesAny(text, ["glucide", "glucides", "carbohydrate", "carbs_g"]) && !includesAny(text, ["amidon", "glucose", "fructose", "lactose", "maltose", "galactose", "polyol"])) return "carbs";
+  if (isTotalSugar(text)) return "sugars";
+  if (isMainFat(text)) return "fat";
+  if (includesAny(text, ["sature", "saturated"]) && includesAny(text, ["gras", "fat", "ag_", "acide_gras"])) return "saturated_fat";
+  if (includesAny(text, ["fiber", "fibre", "fibres"])) return "fiber";
+  return row.key;
+}
+
 function nutrientPriority(row: NutrientRow) {
   const text = nutrientText(row);
   const vitaminRank = firstMatchingOrder(text, vitaminOrder);
@@ -110,9 +141,9 @@ function nutrientPriority(row: NutrientRow) {
   if (isTotalSugar(text)) return 11;
   if (isMainFat(text)) return 20;
   if (includesAny(text, ["sature", "saturated"]) && includesAny(text, ["gras", "fat", "ag_", "acide_gras"])) return 21;
-  if (includesAny(text, ["protein", "proteine", "proteines"])) return 30;
+  if (includesAny(text, ["protein", "proteine", "proteines"])) return includesAny(text, ["facteur_de_jones", "jones"]) ? 30 : 31;
   if (includesAny(text, ["fiber", "fibre", "fibres"])) return 40;
-  if (includesAny(text, ["energy", "energie"])) return 50;
+  if (includesAny(text, ["energy", "energie"])) return includesAny(text, ["reglement_ue", "1169"]) ? 50 : 51;
   if (vitaminRank !== null) return 100 + vitaminRank;
   if (mineralRank !== null) return 200 + mineralRank;
   if (includesAny(text, ["amidon", "polyol", "glucose", "fructose", "galactose", "lactose", "maltose"])) return 350;
@@ -140,13 +171,22 @@ function rowsFor(food: { nutrients: Record<string, number>; fullNutrients?: Full
 }
 
 function detailRowsFor(food: { nutrients: Record<string, number>; fullNutrients?: FullNutrient[] }) {
+  const seen = new Set<string>();
+
   return rowsFor(food)
     .filter((row) => !isSecondaryEnergyKj(row))
+    .filter((row) => {
+      const canonical = canonicalNutrientKey(row);
+      if (seen.has(canonical)) return false;
+      seen.add(canonical);
+      return true;
+    })
     .map((row) => ({
       key: row.key,
-      label: row.label,
+      label: cleanDisplayLabel(row),
       unit: row.unit,
-      per100g: row.value
+      per100g: row.value,
+      sourceColumnName: row.sourceColumnName
     }));
 }
 
