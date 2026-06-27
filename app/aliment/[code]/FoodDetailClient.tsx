@@ -50,12 +50,6 @@ function percentLabel(percent: number | null) { return percent === null ? "-" : 
 function overflowLabel(percent: number | null, role: NutrientRole) { if (percent === null || percent <= 100) return null; const prefix = role === "limit" ? "dépassement" : "au-dessus"; return `+${percent - 100}% ${prefix}`; }
 function referenceText(reference: NutrientReference | null) { if (!reference) return "Aucun repère personnalisé disponible"; return `Repère : ${formatAmount(reference.target, reference.unit)} · ${reference.basis} · ${reference.source}`; }
 
-function targetLabel(nutrient: DisplayRow) {
-  if (nutrient.reference) return formatAmount(nutrient.reference.target, nutrient.reference.unit);
-  if (nutrient.target) return formatAmount(nutrient.target, nutrient.unit);
-  return "-";
-}
-
 function dailyStatus(nutrient: DisplayRow) {
   if (nutrient.percent === null) return "Sans repère";
   if (nutrient.percent > 100) return nutrient.role === "limit" ? "Dépassement" : "Au-dessus";
@@ -69,10 +63,12 @@ function ProgressVisual({ nutrient }: { nutrient: DisplayRow }) {
   const clampedPercent = Math.min(percent || 0, 100);
   const overflowPercent = Math.max((percent || 0) - 100, 0);
   const isExceeded = overflowPercent > 0;
-  const safeCursorPercent = percent === null ? 0 : isExceeded ? 94 : Math.max(6, Math.min(clampedPercent, 94));
+  const valueCursorPercent = percent === null ? 0 : Math.max(1.5, Math.min(clampedPercent, 98.5));
+  const safeLabelPercent = percent === null ? 0 : isExceeded ? 94 : Math.max(6, Math.min(clampedPercent, 94));
   const targetShiftPx = isExceeded ? 118 : 0;
   const target = nutrient.reference ? formatAmount(nutrient.reference.target, nutrient.reference.unit) : null;
   const currentLabel = amountLabel(nutrient.value, nutrient.unit);
+  const cursorColor = isExceeded ? "#d18b52" : "#2e7d3f";
 
   return (
     <div className="progressVisual" style={{ position: "relative", paddingTop: isExceeded ? "3.15rem" : "2.65rem", marginTop: "1rem" }}>
@@ -98,7 +94,7 @@ function ProgressVisual({ nutrient }: { nutrient: DisplayRow }) {
           className="currentValuePill"
           style={{
             position: "absolute",
-            left: `${safeCursorPercent}%`,
+            left: `${safeLabelPercent}%`,
             top: 0,
             transform: "translateX(-50%)",
             padding: isExceeded ? "0.34rem 0.68rem" : "0.28rem 0.58rem",
@@ -124,12 +120,48 @@ function ProgressVisual({ nutrient }: { nutrient: DisplayRow }) {
           borderRadius: "999px",
           background: "rgba(237, 244, 232, 0.95)",
           border: isExceeded ? "2px solid #d18b52" : "1px solid rgba(16, 35, 27, 0.08)",
-          overflow: "hidden",
+          overflow: "visible",
           boxShadow: isExceeded ? "0 0 0 4px rgba(209, 139, 82, 0.14)" : "none"
         }}
       >
-        <i style={{ position: "absolute", inset: "0 auto 0 0", width: `${clampedPercent}%`, borderRadius: "999px", background: "linear-gradient(90deg, #2e7d3f, #86b65d)" }} />
-        {isExceeded ? <b style={{ position: "absolute", inset: "0 0 0 auto", width: "16%", borderRadius: "999px", background: "repeating-linear-gradient(135deg, #d18b52 0 6px, #f0c06b 6px 12px)" }} /> : null}
+        <span style={{ position: "absolute", inset: 0, borderRadius: "999px", overflow: "hidden" }}>
+          <i style={{ position: "absolute", inset: "0 auto 0 0", width: `${clampedPercent}%`, borderRadius: "999px", background: "linear-gradient(90deg, #2e7d3f, #86b65d)" }} />
+          {isExceeded ? <b style={{ position: "absolute", inset: "0 0 0 auto", width: "16%", borderRadius: "999px", background: "repeating-linear-gradient(135deg, #d18b52 0 6px, #f0c06b 6px 12px)" }} /> : null}
+        </span>
+        {percent !== null ? (
+          <>
+            <span
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                left: `${valueCursorPercent}%`,
+                top: "-20px",
+                width: "2px",
+                height: "24px",
+                transform: "translateX(-50%)",
+                borderRadius: "999px",
+                background: cursorColor,
+                zIndex: 4
+              }}
+            />
+            <span
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                left: `${valueCursorPercent}%`,
+                top: "50%",
+                width: isExceeded ? "20px" : "18px",
+                height: isExceeded ? "20px" : "18px",
+                transform: "translate(-50%, -50%)",
+                borderRadius: "999px",
+                background: isExceeded ? "#fff2d6" : "#ffffff",
+                border: isExceeded ? "4px solid #d18b52" : "4px solid #2e7d3f",
+                boxShadow: isExceeded ? "0 4px 14px rgba(117, 67, 0, 0.22)" : "0 4px 12px rgba(16, 35, 27, 0.18)",
+                zIndex: 5
+              }}
+            />
+          </>
+        ) : null}
       </div>
       {isExceeded ? (
         <div
@@ -171,17 +203,16 @@ function DailyRecapTable({ rows }: { rows: DisplayRow[] }) {
     >
       <div style={{ padding: "18px 18px 10px" }}>
         <span style={{ display: "block", color: "#5d6b62", fontSize: "0.78rem", fontWeight: 950, letterSpacing: "0.08em", textTransform: "uppercase" }}>Récap journée</span>
-        <strong style={{ display: "block", marginTop: "4px", color: "#10231b", fontSize: "1.15rem" }}>Valeurs réelles et % atteint</strong>
+        <strong style={{ display: "block", marginTop: "4px", color: "#10231b", fontSize: "1.15rem" }}>Valeurs réelles et % cible jour</strong>
         <small style={{ display: "block", marginTop: "6px", color: "#6a766f", fontWeight: 800 }}>Pour la portion sélectionnée, comparée aux repères journaliers du profil.</small>
       </div>
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", minWidth: "560px", borderCollapse: "collapse" }}>
+        <table style={{ width: "100%", minWidth: "430px", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ color: "#5d6b62", fontSize: "0.76rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
               <th style={{ padding: "12px 18px", textAlign: "left" }}>Nutriment</th>
               <th style={{ padding: "12px 14px", textAlign: "right" }}>Valeur réelle</th>
-              <th style={{ padding: "12px 14px", textAlign: "right" }}>Cible jour</th>
-              <th style={{ padding: "12px 18px 12px 14px", textAlign: "right" }}>% atteint</th>
+              <th style={{ padding: "12px 18px 12px 14px", textAlign: "right" }}>% cible jour</th>
             </tr>
           </thead>
           <tbody>
@@ -191,7 +222,6 @@ function DailyRecapTable({ rows }: { rows: DisplayRow[] }) {
                 <tr key={`recap-${nutrient.key}`} style={{ borderTop: "1px solid rgba(16, 35, 27, 0.08)" }}>
                   <td style={{ padding: "12px 18px", color: "#10231b", fontWeight: 900 }}>{nutrient.label}</td>
                   <td style={{ padding: "12px 14px", textAlign: "right", color: "#10231b", fontWeight: 950 }}>{amountLabel(nutrient.value, nutrient.unit)}</td>
-                  <td style={{ padding: "12px 14px", textAlign: "right", color: "#405147", fontWeight: 900 }}>{targetLabel(nutrient)}</td>
                   <td style={{ padding: "12px 18px 12px 14px", textAlign: "right" }}>
                     <span
                       style={{
