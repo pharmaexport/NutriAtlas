@@ -49,6 +49,15 @@ type DisplayRow = NutrientItem & {
   reference: NutrientReference | null;
   role: NutrientRole;
 };
+type RankingGrade = "A" | "B" | "C" | "D" | "E";
+type RankingEstimate = { grade: RankingGrade; confidence: "moyenne" | "faible" };
+
+const ENERGY_THRESHOLDS_KJ = [335, 670, 1005, 1340, 1675, 2010, 2345, 2680, 3015, 3350];
+const SATURATED_FAT_THRESHOLDS_G = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const SUGARS_THRESHOLDS_G = [3.4, 6.8, 10, 14, 17, 20, 24, 27, 31, 34, 37, 41, 44, 48, 51];
+const SALT_THRESHOLDS_G = [0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4];
+const FIBER_THRESHOLDS_G = [3, 4.1, 5.2, 6.3, 7.4];
+const PROTEIN_THRESHOLDS_G = [2.4, 4.8, 7.2, 9.6, 12, 14, 17];
 
 function round(value: number) { return Math.round(value * 10) / 10; }
 function valueForPortion(per100g: number, grams: number) { return round((per100g * grams) / 100); }
@@ -92,6 +101,127 @@ function overflowLabel(percent: number | null, role: NutrientRole) {
   if (percent === null || percent <= 100) return null;
   const prefix = role === "limit" ? "dépassement" : "au-dessus";
   return `+${percent - 100}% ${prefix}`;
+}
+
+function thresholdCount(value: number, thresholds: readonly number[]) {
+  return thresholds.reduce((sum, threshold) => sum + (value > threshold ? 1 : 0), 0);
+}
+
+function gradeFromTotal(total: number): RankingGrade {
+  if (total <= 0) return "A";
+  if (total <= 2) return "B";
+  if (total <= 10) return "C";
+  if (total <= 18) return "D";
+  return "E";
+}
+
+function rowValue(rows: DisplayRow[], keys: string[], labelPatterns: string[] = []) {
+  const normalizedPatterns = labelPatterns.map(normalizeText);
+  const row = rows.find((item) => {
+    const label = normalizeText(`${item.key} ${item.label} ${item.sourceColumnName || ""}`);
+    return keys.includes(item.key) || normalizedPatterns.some((pattern) => label.includes(pattern));
+  });
+  return typeof row?.per100g === "number" ? row.per100g : null;
+}
+
+function hasFruitVegetableLegumeSignal(food: Props["food"]) {
+  const text = normalizeText(`${food.name} ${food.group} ${food.subgroup || ""}`);
+  return text.includes("fruit") || text.includes("legume") || text.includes("legumineuse") || text.includes("lentille") || text.includes("pois chiche") || text.includes("haricot") || text.includes("feve");
+}
+
+function computeRanking(rows: DisplayRow[], food: Props["food"]): RankingEstimate | null {
+  const energyKcal = rowValue(rows, ["energy_kcal"]);
+  const energyKj = rowValue(rows, ["energy_kj"]) ?? (energyKcal !== null ? energyKcal * 4.184 : null);
+  const saturatedFat = rowValue(rows, ["saturated_fat_g"], ["acides gras satures", "ag satures", "saturated fat"]);
+  const sugars = rowValue(rows, ["sugars_g"], ["sucres"]);
+  const sodiumMg = rowValue(rows, ["sodium_mg"], ["sodium"]);
+  const salt = rowValue(rows, ["salt_g"], ["sel chlorure de sodium"]) ?? (sodiumMg !== null ? (sodiumMg * 2.5) / 1000 : null);
+
+  if (energyKj === null || saturatedFat === null || sugars === null || salt === null) return null;
+
+  const unfavorable =
+    thresholdCount(energyKj, ENERGY_THRESHOLDS_KJ) +
+    thresholdCount(saturatedFat, SATURATED_FAT_THRESHOLDS_G) +
+    thresholdCount(sugars, SUGARS_THRESHOLDS_G) +
+    thresholdCount(salt, SALT_THRESHOLDS_G);
+
+  const fiber = rowValue(rows, ["fiber_g"], ["fibres alimentaires"]) ?? 0;
+  const protein = rowValue(rows, ["protein_g"], ["proteines"]) ?? 0;
+  const fruitVegetableLegume = hasFruitVegetableLegumeSignal(food) ? 5 : 0;
+  const favorable = unfavorable < 11
+    ? fruitVegetableLegume + thresholdCount(fiber, FIBER_THRESHOLDS_G) + thresholdCount(protein, PROTEIN_THRESHOLDS_G)
+    : fruitVegetableLegume + thresholdCount(fiber, FIBER_THRESHOLDS_G);
+
+  return {
+    grade: gradeFromTotal(unfavorable - favorable),
+    confidence: fruitVegetableLegume > 0 ? "moyenne" : "faible"
+  };
+}
+
+function rankingGradient(grade: RankingGrade | "unknown") {
+  if (grade === "A" || grade === "B") return "linear-gradient(135deg, #1f7a39, #7fb449)";
+  if (grade === "C") return "linear-gradient(135deg, #e1b928, #f2d767)";
+  if (grade === "D") return "linear-gradient(135deg, #d98024, #f0b15a)";
+  if (grade === "E") return "linear-gradient(135deg, #b8322d, #e0594d)";
+  return "linear-gradient(135deg, #7a867e, #aeb7af)";
+}
+
+function RankingBadge({ ranking }: { ranking: RankingEstimate | null }) {
+  const grade = ranking?.grade || "unknown";
+  return (
+    <aside
+      aria-label={ranking ? `Ranking nutritionnel ${ranking.grade}, confiance ${ranking.confidence}` : "Ranking nutritionnel indisponible"}
+      style={{
+        position: "absolute",
+        top: "22px",
+        right: "22px",
+        zIndex: 2,
+        display: "grid",
+        placeItems: "center",
+        width: "138px",
+        minHeight: "132px",
+        padding: "13px 12px 12px",
+        borderRadius: "30px",
+        border: "1px solid rgba(16, 35, 27, 0.12)",
+        background: "rgba(255,255,255,0.92)",
+        color: "#10231b",
+        textAlign: "center",
+        boxShadow: "0 20px 52px rgba(16, 35, 27, 0.12)"
+      }}
+    >
+      <span style={{ color: "#526158", fontSize: "0.72rem", fontWeight: 950, letterSpacing: "0.08em", textTransform: "uppercase" }}>Ranking</span>
+      <strong
+        style={{
+          display: "grid",
+          placeItems: "center",
+          width: "78px",
+          height: "78px",
+          margin: "7px 0 0",
+          borderRadius: "26px",
+          background: rankingGradient(grade),
+          color: grade === "C" ? "#352d00" : "#ffffff",
+          fontSize: "3.25rem",
+          lineHeight: 1,
+          fontWeight: 1000,
+          letterSpacing: "-0.08em",
+          boxShadow: "inset 0 -12px 24px rgba(0,0,0,0.12)"
+        }}
+      >
+        {ranking?.grade || "–"}
+      </strong>
+    </aside>
+  );
+}
+
+function HighlightCard({ highlights }: { highlights: DisplayRow[] }) {
+  if (highlights.length === 0) return null;
+
+  return (
+    <section className="highlightCard" style={{ margin: "0 0 18px" }}>
+      <span>Contributions principales</span>
+      <div>{highlights.map((item) => <strong className={progressTone(item.role, item.percent)} key={`${item.key}-${item.label}`}>{item.label} · {percentLabel(item.percent)}</strong>)}</div>
+    </section>
+  );
 }
 
 function DailyRecapTable({ rows }: { rows: DisplayRow[] }) {
@@ -196,6 +326,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
   }), [nutrients, portion.grams, profile, customEnergyKcal]);
 
   const energy = rows.find(isEnergyKcal);
+  const ranking = useMemo(() => computeRanking(rows, food), [rows, food]);
   const highlights = rows
     .filter((row) => typeof row.percent === "number" && !isEnergyKcal(row))
     .sort((a, b) => {
@@ -223,13 +354,16 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
 
   return (
     <section className="foodPage pageSection">
-      <div className="foodHeroCard foodHeroPremium">
+      <div className="foodHeroCard foodHeroPremium" style={{ paddingRight: "188px" }}>
         <div className="foodTitleBlock">
           <p className="eyebrow">Aliment {food.code}</p>
           <h1>{food.name}</h1>
           <p>{food.group}{food.subgroup ? ` – ${food.subgroup}` : ""}</p>
         </div>
+        <RankingBadge ranking={ranking} />
       </div>
+
+      <HighlightCard highlights={highlights} />
 
       <div className="portionControlCard">
         <div className="portionControlHeader">
@@ -275,13 +409,6 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
         <a className="secondaryCta" href="/cumul">Voir le cumul</a>
         <a className="secondaryCta" href="/profil">Modifier le profil</a>
       </div>
-
-      {highlights.length > 0 ? (
-        <section className="highlightCard">
-          <span>Contributions principales</span>
-          <div>{highlights.map((item) => <strong className={progressTone(item.role, item.percent)} key={item.key}>{item.label} · {percentLabel(item.percent)}</strong>)}</div>
-        </section>
-      ) : null}
 
       <section className="nutrientTable nutrientDashboard">
         <div className="tableHeader"><span>Données CIQUAL complètes</span><span>% repère profil</span></div>
