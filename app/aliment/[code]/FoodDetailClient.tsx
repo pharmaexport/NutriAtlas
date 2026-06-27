@@ -16,13 +16,13 @@ import {
   type NutrientRole,
   type UserProfile
 } from "../../../lib/nutrition-profile";
-import type { NutriScoreEstimate } from "../../../lib/nutriscore";
+import type { NutritionRankingEstimate } from "../../../lib/nutrition-ranking";
 
 const STORAGE_KEY = "nutriatlas-cumul-v1";
 
 type NutrientItem = { key: string; label: string; unit: string; per100g: number; target?: number; role?: NutrientRole; sourceColumnName?: string | null; };
 type PortionOption = { label: string; grams: number; description: string; };
-type Props = { food: { code: string; name: string; group: string; subgroup?: string | null; }; portions: PortionOption[]; nutrients: NutrientItem[]; nutriScore: NutriScoreEstimate | null; };
+type Props = { food: { code: string; name: string; group: string; subgroup?: string | null; }; portions: PortionOption[]; nutrients: NutrientItem[]; nutritionRanking: NutritionRankingEstimate | null; };
 type CumulItem = { id: string; foodCode: string; foodName: string; portionLabel: string; grams: number; nutrients: Array<{ key: string; label: string; unit: string; value: number; target?: number; }>; createdAt: string; };
 type DisplayRow = NutrientItem & { value: number; percent: number | null; reference: NutrientReference | null; role: NutrientRole; };
 
@@ -50,14 +50,6 @@ function progressTone(role: NutrientRole, percent: number | null) {
 function percentLabel(percent: number | null) { return percent === null ? "-" : `${percent}%`; }
 function overflowLabel(percent: number | null, role: NutrientRole) { if (percent === null || percent <= 100) return null; const prefix = role === "limit" ? "dépassement" : "au-dessus"; return `+${percent - 100}% ${prefix}`; }
 function referenceText(reference: NutrientReference | null) { if (!reference) return "Aucun repère disponible"; return `Repère : ${formatAmount(reference.target, reference.unit)}`; }
-
-function dailyStatus(nutrient: DisplayRow) {
-  if (nutrient.percent === null) return "Sans repère";
-  if (nutrient.percent > 100) return nutrient.role === "limit" ? "Dépassement" : "Au-dessus";
-  if (nutrient.percent === 100) return "100 %";
-  if (nutrient.percent >= 75) return "Proche";
-  return "Sous cible";
-}
 
 function ProgressVisual({ nutrient }: { nutrient: DisplayRow }) {
   const percent = nutrient.percent;
@@ -224,23 +216,23 @@ function DailyRecapTable({ rows }: { rows: DisplayRow[] }) {
                   <td style={{ padding: "12px 18px", color: "#10231b", fontWeight: 900 }}>{nutrient.label}</td>
                   <td style={{ padding: "12px 14px", textAlign: "right", color: "#10231b", fontWeight: 950 }}>{amountLabel(nutrient.value, nutrient.unit)}</td>
                   <td style={{ padding: "12px 18px 12px 14px", textAlign: "right" }}>
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "0.35rem",
-                        padding: "0.35rem 0.6rem",
-                        borderRadius: "999px",
-                        background: exceeded ? "#fff2d6" : "#eef5e8",
-                        border: exceeded ? "1px solid #d18b52" : "1px solid rgba(16, 35, 27, 0.08)",
-                        color: exceeded ? "#5a3300" : "#24552f",
-                        fontWeight: 950,
-                        whiteSpace: "nowrap"
-                      }}
-                    >
-                      {percentLabel(nutrient.percent)}
-                      <small style={{ fontWeight: 900, opacity: 0.82 }}>{dailyStatus(nutrient)}</small>
-                    </span>
+                    {nutrient.percent !== null ? (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          padding: "0.35rem 0.6rem",
+                          borderRadius: "999px",
+                          background: exceeded ? "#fff2d6" : "#eef5e8",
+                          border: exceeded ? "1px solid #d18b52" : "1px solid rgba(16, 35, 27, 0.08)",
+                          color: exceeded ? "#5a3300" : "#24552f",
+                          fontWeight: 950,
+                          whiteSpace: "nowrap"
+                        }}
+                      >
+                        {percentLabel(nutrient.percent)}
+                      </span>
+                    ) : null}
                   </td>
                 </tr>
               );
@@ -252,18 +244,16 @@ function DailyRecapTable({ rows }: { rows: DisplayRow[] }) {
   );
 }
 
-function NutriScorePictogram({ nutriScore }: { nutriScore: NutriScoreEstimate | null }) {
-  const grade = nutriScore?.grade || "unknown";
-  const ariaLabel = nutriScore
-    ? `${nutriScore.label}, score numérique ${nutriScore.score}, confiance ${nutriScore.confidence}`
-    : "Nutri-Score estimé indisponible";
+function NutritionRankingPictogram({ nutritionRanking }: { nutritionRanking: NutritionRankingEstimate | null }) {
+  const grade = nutritionRanking?.grade || "unknown";
+  const ariaLabel = nutritionRanking
+    ? `${nutritionRanking.label}, confiance ${nutritionRanking.confidence}`
+    : "Ranking nutritionnel indisponible";
 
   return (
-    <aside className="nutriScorePictogram" data-grade={grade} aria-label={ariaLabel}>
-      <span>Nutri-Score</span>
-      <strong>{nutriScore?.grade || "–"}</strong>
-      <small>{nutriScore ? `score ${nutriScore.score}` : "non calculé"}</small>
-      <em>{nutriScore ? nutriScore.confidence : "données incomplètes"}</em>
+    <aside className="nutritionRankingPictogram" data-grade={grade} aria-label={ariaLabel}>
+      <span>Ranking</span>
+      <strong>{nutritionRanking?.grade || "–"}</strong>
     </aside>
   );
 }
@@ -284,7 +274,7 @@ function SourceNotes({ rows }: { rows: DisplayRow[] }) {
   );
 }
 
-export function FoodDetailClient({ food, portions, nutrients, nutriScore }: Props) {
+export function FoodDetailClient({ food, portions, nutrients, nutritionRanking }: Props) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [added, setAdded] = useState(false);
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
@@ -341,7 +331,7 @@ export function FoodDetailClient({ food, portions, nutrients, nutriScore }: Prop
           <h1>{food.name}</h1>
           <p>{food.group}{food.subgroup ? ` – ${food.subgroup}` : ""}</p>
         </div>
-        <NutriScorePictogram nutriScore={nutriScore} />
+        <NutritionRankingPictogram nutritionRanking={nutritionRanking} />
       </div>
 
       <div className="portionControlCard">
