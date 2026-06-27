@@ -9,12 +9,19 @@ type SearchResult = {
   food_subgroup_name_fr?: string | null;
 };
 
+const portionOptions = [50, 100, 150, 200, 250, 300];
+
+function portionHref(foodCode: string, grams: number) {
+  return `/ciqual2/aliment/${foodCode}?portion=${grams}`;
+}
+
 export function Ciqual2SearchClient() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
   const [status, setStatus] = useState("idle");
   const [message, setMessage] = useState("");
+  const [selectedPortions, setSelectedPortions] = useState<Record<string, number>>({});
   const canSuggest = useMemo(() => query.trim().length >= 2, [query]);
 
   useEffect(() => {
@@ -76,7 +83,7 @@ export function Ciqual2SearchClient() {
     setResults([]);
     setSuggestions([]);
     setMessage("");
-    window.location.href = `/ciqual2/aliment/${food.source_food_code}`;
+    window.location.href = portionHref(food.source_food_code, 100);
   }
 
   return (
@@ -117,18 +124,42 @@ export function Ciqual2SearchClient() {
       {message ? <div className="stateBox">{message}</div> : null}
 
       <div className="resultList">
-        {results.map((food) => (
-          <a className="resultCard" key={food.source_food_code} href={`/ciqual2/aliment/${food.source_food_code}`}>
-            <div>
-              <strong>{food.name}</strong>
-              <span>{food.food_group_name_fr || "Groupe non renseigné"}</span>
-            </div>
-            <div className="resultAction">
-              <code>{food.source_food_code}</code>
-              <span>Fiche complète</span>
-            </div>
-          </a>
-        ))}
+        {results.map((food) => {
+          const grams = selectedPortions[food.source_food_code] || 100;
+          return (
+            <article className="resultCard" key={food.source_food_code}>
+              <div>
+                <strong>{food.name}</strong>
+                <span>{food.food_group_name_fr || "Groupe non renseigné"}</span>
+              </div>
+              <div className="resultAction" style={{ gap: "0.65rem" }}>
+                <code>{food.source_food_code}</code>
+                <label style={{ display: "grid", gap: "0.25rem", color: "#4c5d53", fontWeight: 900 }}>
+                  <small style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Portion</small>
+                  <select
+                    aria-label={`Portion pour ${food.name}`}
+                    value={grams}
+                    onChange={(event) => setSelectedPortions((current) => ({ ...current, [food.source_food_code]: Number(event.target.value) }))}
+                    style={{
+                      border: "1px solid rgba(16, 35, 27, 0.14)",
+                      borderRadius: "999px",
+                      padding: "0.55rem 0.75rem",
+                      background: "#eef5e8",
+                      color: "#10231b",
+                      fontWeight: 950,
+                      minWidth: "112px"
+                    }}
+                  >
+                    {portionOptions.map((option) => <option value={option} key={option}>{option} g</option>)}
+                  </select>
+                </label>
+                <a className="primaryCta" href={portionHref(food.source_food_code, grams)} style={{ padding: "0.8rem 1rem", minWidth: "0" }}>
+                  Fiche complète
+                </a>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
