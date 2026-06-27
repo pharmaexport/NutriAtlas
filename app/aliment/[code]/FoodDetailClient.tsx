@@ -50,6 +50,20 @@ function percentLabel(percent: number | null) { return percent === null ? "-" : 
 function overflowLabel(percent: number | null, role: NutrientRole) { if (percent === null || percent <= 100) return null; const prefix = role === "limit" ? "dépassement" : "au-dessus"; return `+${percent - 100}% ${prefix}`; }
 function referenceText(reference: NutrientReference | null) { if (!reference) return "Aucun repère personnalisé disponible"; return `Repère : ${formatAmount(reference.target, reference.unit)} · ${reference.basis} · ${reference.source}`; }
 
+function targetLabel(nutrient: DisplayRow) {
+  if (nutrient.reference) return formatAmount(nutrient.reference.target, nutrient.reference.unit);
+  if (nutrient.target) return formatAmount(nutrient.target, nutrient.unit);
+  return "-";
+}
+
+function dailyStatus(nutrient: DisplayRow) {
+  if (nutrient.percent === null) return "Sans repère";
+  if (nutrient.percent > 100) return nutrient.role === "limit" ? "Dépassement" : "Au-dessus";
+  if (nutrient.percent === 100) return "100 % atteint";
+  if (nutrient.percent >= 75) return "Proche";
+  return "En cours";
+}
+
 function ProgressVisual({ nutrient }: { nutrient: DisplayRow }) {
   const percent = nutrient.percent;
   const clampedPercent = Math.min(percent || 0, 100);
@@ -57,13 +71,13 @@ function ProgressVisual({ nutrient }: { nutrient: DisplayRow }) {
   const isExceeded = overflowPercent > 0;
   const safeCursorPercent = percent === null ? 0 : isExceeded ? 94 : Math.max(6, Math.min(clampedPercent, 94));
   const targetShiftPx = isExceeded ? 118 : 0;
-  const targetLabel = nutrient.reference ? formatAmount(nutrient.reference.target, nutrient.reference.unit) : null;
+  const target = nutrient.reference ? formatAmount(nutrient.reference.target, nutrient.reference.unit) : null;
   const currentLabel = amountLabel(nutrient.value, nutrient.unit);
 
   return (
     <div className="progressVisual" style={{ position: "relative", paddingTop: isExceeded ? "3.15rem" : "2.65rem", marginTop: "1rem" }}>
       <div className="progressScale" style={{ position: "absolute", inset: "0 0 auto 0", height: "2.65rem", pointerEvents: "none" }} aria-hidden="true">
-        {targetLabel ? (
+        {target ? (
           <span
             className="targetValuePill"
             style={{
@@ -77,7 +91,7 @@ function ProgressVisual({ nutrient }: { nutrient: DisplayRow }) {
             }}
           >
             <small style={{ display: "block", marginBottom: "0.16rem", fontSize: "0.62rem", lineHeight: 1, opacity: 0.82, textTransform: "uppercase", letterSpacing: "0.05em" }}>Seuil 100 %</small>
-            <strong style={{ display: "block", fontSize: "0.86rem", lineHeight: 1 }}>{targetLabel}</strong>
+            <strong style={{ display: "block", fontSize: "0.86rem", lineHeight: 1 }}>{target}</strong>
           </span>
         ) : null}
         <span
@@ -142,6 +156,71 @@ function ProgressVisual({ nutrient }: { nutrient: DisplayRow }) {
   );
 }
 
+function DailyRecapTable({ rows }: { rows: DisplayRow[] }) {
+  return (
+    <section
+      className="dailyRecapTable"
+      style={{
+        margin: "18px 0 22px",
+        border: "1px solid rgba(16, 35, 27, 0.12)",
+        borderRadius: "28px",
+        background: "rgba(255, 255, 255, 0.72)",
+        boxShadow: "0 18px 54px rgba(16, 35, 27, 0.06)",
+        overflow: "hidden"
+      }}
+    >
+      <div style={{ padding: "18px 18px 10px" }}>
+        <span style={{ display: "block", color: "#5d6b62", fontSize: "0.78rem", fontWeight: 950, letterSpacing: "0.08em", textTransform: "uppercase" }}>Récap journée</span>
+        <strong style={{ display: "block", marginTop: "4px", color: "#10231b", fontSize: "1.15rem" }}>Valeurs réelles et % atteint</strong>
+        <small style={{ display: "block", marginTop: "6px", color: "#6a766f", fontWeight: 800 }}>Pour la portion sélectionnée, comparée aux repères journaliers du profil.</small>
+      </div>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", minWidth: "560px", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ color: "#5d6b62", fontSize: "0.76rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              <th style={{ padding: "12px 18px", textAlign: "left" }}>Nutriment</th>
+              <th style={{ padding: "12px 14px", textAlign: "right" }}>Valeur réelle</th>
+              <th style={{ padding: "12px 14px", textAlign: "right" }}>Cible jour</th>
+              <th style={{ padding: "12px 18px 12px 14px", textAlign: "right" }}>% atteint</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((nutrient) => {
+              const exceeded = (nutrient.percent || 0) > 100;
+              return (
+                <tr key={`recap-${nutrient.key}`} style={{ borderTop: "1px solid rgba(16, 35, 27, 0.08)" }}>
+                  <td style={{ padding: "12px 18px", color: "#10231b", fontWeight: 900 }}>{nutrient.label}</td>
+                  <td style={{ padding: "12px 14px", textAlign: "right", color: "#10231b", fontWeight: 950 }}>{amountLabel(nutrient.value, nutrient.unit)}</td>
+                  <td style={{ padding: "12px 14px", textAlign: "right", color: "#405147", fontWeight: 900 }}>{targetLabel(nutrient)}</td>
+                  <td style={{ padding: "12px 18px 12px 14px", textAlign: "right" }}>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.35rem",
+                        padding: "0.35rem 0.6rem",
+                        borderRadius: "999px",
+                        background: exceeded ? "#fff2d6" : "#eef5e8",
+                        border: exceeded ? "1px solid #d18b52" : "1px solid rgba(16, 35, 27, 0.08)",
+                        color: exceeded ? "#5a3300" : "#24552f",
+                        fontWeight: 950,
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      {percentLabel(nutrient.percent)}
+                      <small style={{ fontWeight: 900, opacity: 0.82 }}>{dailyStatus(nutrient)}</small>
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 export function FoodDetailClient({ food, portions, nutrients }: Props) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [added, setAdded] = useState(false);
@@ -165,6 +244,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
   }), [nutrients, portion.grams, profile, customEnergyKcal]);
 
   const energy = rows.find((row) => isEnergyKcal(row.key));
+  const recapRows = useMemo(() => rows.filter((row) => typeof row.value === "number"), [rows]);
   const highlights = rows
     .filter((row) => typeof row.percent === "number" && !isEnergyKcal(row.key))
     .sort((a, b) => {
@@ -215,6 +295,8 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
         <div><span>Portion sélectionnée</span><strong>{portion.grams} g</strong><small>{portion.label}</small></div>
         <div><span>Énergie portion</span><strong>{energy ? `${energy.value} kcal` : "-"}</strong><small>{typeof energy?.percent === "number" ? `${energy.percent}% du besoin profil` : "CIQUAL"}</small></div>
       </div>
+
+      <DailyRecapTable rows={recapRows} />
 
       <div className="actionRow">
         <button className="primaryCta addButton" type="button" onClick={addToCumul}>{added ? "Ajouté au cumul" : "Ajouter au cumul"}</button>
