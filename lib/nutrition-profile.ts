@@ -297,13 +297,7 @@ const EU_MICRONUTRIENT_REFERENCES: MicronutrientReferenceDefinition[] = [
 function euMicronutrientReference(key: string, basis = "Valeur de référence d’étiquetage"): NutrientReference | null {
   const definition = EU_MICRONUTRIENT_REFERENCES.find((item) => includesAny(key, item.needles));
   if (!definition) return null;
-  return {
-    target: definition.target,
-    unit: definition.unit,
-    role: "positive",
-    basis,
-    source: "Règlement UE 1169/2011"
-  };
+  return { target: definition.target, unit: definition.unit, role: "positive", basis, source: "Règlement UE 1169/2011" };
 }
 
 function sugarLimit(age: number) {
