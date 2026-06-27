@@ -1,7 +1,9 @@
 import { FoodDetailClient } from "./FoodDetailClient";
-import { getFoodByCode } from "../../../lib/nutrition-data";
+import { getFoodByCode, type FullNutrient } from "../../../lib/nutrition-data";
 
 type PageProps = { params: { code: string } };
+type NutrientRole = "positive" | "limit" | "neutral";
+type NutrientRow = { key: string; label: string; unit: string; value: number; sourceColumnName?: string | null; };
 
 function unitFor(key: string) {
   if (key.endsWith("_ug")) return "µg";
@@ -25,40 +27,75 @@ function labelFor(key: string) {
     .join(" ");
 }
 
-function roleFor(key: string): "positive" | "limit" | "neutral" {
-  if (key.includes("sugar") || key.includes("salt") || key.includes("sodium")) return "limit";
+function normalize(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/œ/g, "oe")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_");
+}
+
+function includesAny(value: string, needles: string[]) {
+  return needles.some((needle) => value.includes(needle));
+}
+
+function roleFor(key: string, label: string): NutrientRole {
+  const normalized = normalize(`${key} ${label}`);
   if (
-    key.includes("vitamin") ||
-    key.includes("calcium") ||
-    key.includes("iron") ||
-    key.includes("magnesium") ||
-    key.includes("potassium") ||
-    key.includes("selenium") ||
-    key.includes("zinc") ||
-    key.includes("fiber") ||
-    key.includes("protein")
+    includesAny(normalized, ["sugar", "sucre", "sucres", "salt", "sel", "sodium", "sature", "saturated"]) &&
+    !normalized.includes("selenium")
+  ) return "limit";
+  if (
+    includesAny(normalized, [
+      "vitamin", "vitamine", "retinol", "carotene", "folate", "calcium", "iron", "fer", "magnesium", "magnes",
+      "potassium", "selenium", "zinc", "cuivre", "manganese", "iode", "fiber", "fibre", "fibres", "protein", "proteine", "proteines"
+    ])
   ) return "positive";
   return "neutral";
 }
 
-function sortScore(key: string) {
-  if (key.includes("energy")) return 0;
-  if (key.includes("protein") || key.includes("carb") || key.includes("fat") || key.includes("sugar") || key.includes("fiber") || key.includes("salt")) return 1;
-  if (key.includes("calcium") || key.includes("iron") || key.includes("magnesium") || key.includes("potassium") || key.includes("sodium") || key.includes("zinc") || key.includes("selenium")) return 2;
-  if (key.includes("vitamin") || key.includes("retinol") || key.includes("carotene") || key.includes("folate")) return 3;
+function sortScore(key: string, label: string) {
+  const normalized = normalize(`${key} ${label}`);
+  if (includesAny(normalized, ["energy", "energie"])) return 0;
+  if (includesAny(normalized, ["eau", "water", "protein", "proteine", "glucide", "carb", "lipide", "fat", "sucre", "sugar", "fibre", "fiber", "sel", "salt", "alcool"])) return 1;
+  if (includesAny(normalized, ["calcium", "fer", "iron", "magnesium", "magnes", "potassium", "sodium", "zinc", "selenium", "cuivre", "manganese", "iode", "phosphore"])) return 2;
+  if (includesAny(normalized, ["vitamin", "vitamine", "retinol", "carotene", "folate", "thiamine", "riboflavine", "niacine", "cobalamine"])) return 3;
   return 4;
 }
 
-function nutrientsFor(food: { nutrients: Record<string, number> }) {
-  return Object.entries(food.nutrients || {})
-    .filter(([, value]) => typeof value === "number")
-    .sort(([a], [b]) => sortScore(a) - sortScore(b) || a.localeCompare(b, "fr"))
-    .map(([key, per100g]) => ({
-      key,
-      label: labelFor(key),
-      unit: unitFor(key),
-      per100g,
-      role: roleFor(key)
+function summaryRows(nutrients: Record<string, number>): NutrientRow[] {
+  return Object.entries(nutrients || {}).map(([key, value]) => ({
+    key,
+    label: labelFor(key),
+    unit: unitFor(key),
+    value
+  }));
+}
+
+function fullRows(fullNutrients: FullNutrient[]): NutrientRow[] {
+  return fullNutrients.map((nutrient) => ({
+    key: nutrient.key,
+    label: nutrient.label || labelFor(nutrient.key),
+    unit: nutrient.unit || unitFor(nutrient.key),
+    value: nutrient.value,
+    sourceColumnName: nutrient.sourceColumnName || null
+  }));
+}
+
+function nutrientsFor(food: { nutrients: Record<string, number>; fullNutrients?: FullNutrient[] }) {
+  const sourceRows = food.fullNutrients?.length ? fullRows(food.fullNutrients) : summaryRows(food.nutrients);
+
+  return sourceRows
+    .filter((item) => typeof item.value === "number")
+    .sort((a, b) => sortScore(a.key, a.label) - sortScore(b.key, b.label) || a.label.localeCompare(b.label, "fr"))
+    .map((item) => ({
+      key: item.key,
+      label: item.label,
+      unit: item.unit,
+      per100g: item.value,
+      sourceColumnName: item.sourceColumnName || null,
+      role: roleFor(item.key, item.label)
     }));
 }
 
