@@ -262,6 +262,44 @@ function isProteinKey(key: string) { return includesAny(key, ["protein", "protei
 function isCarbohydrateKey(key: string) { return includesAny(key, ["carbohydrate", "carb", "glucide", "glucides"]); }
 function isEnergyKcalKey(key: string) { return (key.includes("energy") && key.includes("kcal")) || key.includes("energie_kcal"); }
 
+type MicronutrientReferenceDefinition = { needles: string[]; target: number; unit: string };
+
+const EU_MICRONUTRIENT_REFERENCES: MicronutrientReferenceDefinition[] = [
+  { needles: ["vitamin_a", "vitamine_a", "retinol"], target: 800, unit: "µg" },
+  { needles: ["vitamin_d", "vitamine_d"], target: 5, unit: "µg" },
+  { needles: ["vitamin_e", "vitamine_e", "tocopherol"], target: 12, unit: "mg" },
+  { needles: ["vitamin_k", "vitamine_k", "phylloquinone"], target: 75, unit: "µg" },
+  { needles: ["vitamin_c", "vitamine_c", "ascorbique"], target: 80, unit: "mg" },
+  { needles: ["vitamin_b1", "vitamine_b1", "thiamine"], target: 1.1, unit: "mg" },
+  { needles: ["vitamin_b2", "vitamine_b2", "riboflavine"], target: 1.4, unit: "mg" },
+  { needles: ["vitamin_b3", "vitamine_b3", "niacine", "niacin"], target: 16, unit: "mg" },
+  { needles: ["vitamin_b5", "vitamine_b5", "pantothenique", "pantothenic"], target: 6, unit: "mg" },
+  { needles: ["vitamin_b6", "vitamine_b6", "pyridoxine"], target: 1.4, unit: "mg" },
+  { needles: ["vitamin_b8", "vitamine_b8", "biotine", "biotin"], target: 50, unit: "µg" },
+  { needles: ["vitamin_b9", "vitamine_b9", "folate", "folates", "folique"], target: 200, unit: "µg" },
+  { needles: ["vitamin_b12", "vitamine_b12", "cobalamine"], target: 2.5, unit: "µg" },
+  { needles: ["potassium"], target: 2000, unit: "mg" },
+  { needles: ["chlorure", "chloride"], target: 800, unit: "mg" },
+  { needles: ["calcium"], target: 800, unit: "mg" },
+  { needles: ["phosphore", "phosphorus"], target: 700, unit: "mg" },
+  { needles: ["magnesium", "magnes"], target: 375, unit: "mg" },
+  { needles: ["fer", "iron"], target: 14, unit: "mg" },
+  { needles: ["zinc"], target: 10, unit: "mg" },
+  { needles: ["cuivre", "copper"], target: 1, unit: "mg" },
+  { needles: ["manganese"], target: 2, unit: "mg" },
+  { needles: ["fluorure", "fluoride"], target: 3.5, unit: "mg" },
+  { needles: ["selenium"], target: 55, unit: "µg" },
+  { needles: ["chrome", "chromium"], target: 40, unit: "µg" },
+  { needles: ["molybdene", "molybdenum"], target: 50, unit: "µg" },
+  { needles: ["iode", "iodine"], target: 150, unit: "µg" }
+];
+
+function euMicronutrientReference(key: string, basis = "Valeur de référence d’étiquetage"): NutrientReference | null {
+  const definition = EU_MICRONUTRIENT_REFERENCES.find((item) => includesAny(key, item.needles));
+  if (!definition) return null;
+  return { target: definition.target, unit: definition.unit, role: "positive", basis, source: "Règlement UE 1169/2011" };
+}
+
 function sugarLimit(age: number) {
   if (age >= 13) return 100;
   if (age >= 8) return 75;
@@ -341,17 +379,13 @@ function euReference(key: string): NutrientReference | null {
   if (isCarbohydrateKey(key)) return { ...base, target: 260, unit: "g", role: "neutral" };
   if (isProteinKey(key)) return { ...base, target: 50, unit: "g", role: "positive" };
   if (isFiberKey(key)) return { ...base, target: 25, unit: "g", role: "positive" };
-  if (key.includes("potassium")) return { ...base, target: 2000, unit: "mg", role: "positive" };
-  if (key.includes("magnesium") || key.includes("magnes")) return { ...base, target: 375, unit: "mg", role: "positive" };
-  if (key.includes("calcium")) return { ...base, target: 800, unit: "mg", role: "positive" };
-  if (key.includes("selenium")) return { ...base, target: 55, unit: "µg", role: "positive" };
-  return null;
+  return euMicronutrientReference(key);
 }
 
 export function roleForNutrient(key: string): NutrientRole {
   const normalized = normalizedKey(key);
   if (isSugarKey(normalized) || isSaltKey(normalized) || isSodiumKey(normalized) || isSaturatedFatKey(normalized)) return "limit";
-  if (isFiberKey(normalized) || isProteinKey(normalized) || includesAny(normalized, ["vitamin", "vitamine", "calcium", "iron", "fer", "magnesium", "magnes", "potassium", "selenium", "zinc"])) return "positive";
+  if (isFiberKey(normalized) || isProteinKey(normalized) || euMicronutrientReference(normalized) || includesAny(normalized, ["vitamin", "vitamine", "folate", "calcium", "iron", "fer", "magnesium", "magnes", "potassium", "selenium", "zinc"])) return "positive";
   return "neutral";
 }
 
@@ -389,7 +423,7 @@ export function getReferenceForNutrient(key: string, input?: Partial<UserProfile
   if (normalized.includes("calcium")) return { target: calciumTarget(profile), unit: "mg", role: "positive", basis: "RNP calcium selon l’âge", source: "ANSES", upperLimit: profile.age >= 18 ? 2500 : undefined, upperLimitLabel: profile.age >= 18 ? "LSS" : undefined };
   if (normalized.includes("selenium")) return { target: seleniumTarget(profile), unit: "µg", role: "positive", basis: "AS sélénium selon l’âge", source: "ANSES", upperLimit: profile.age >= 18 ? 255 : undefined, upperLimitLabel: profile.age >= 18 ? "LSS" : undefined };
 
-  return null;
+  return euMicronutrientReference(normalized, "Valeur de référence d’étiquetage utilisée à défaut de repère ANSES personnalisé codé");
 }
 
 export function coveragePercent(value: number, target?: number | null) {
@@ -427,6 +461,9 @@ export function keyReferenceSummary(profileInput: Partial<UserProfile>): Referen
     { key: "saturated_fat_g", label: "Saturés", reference: getReferenceForNutrient("saturated_fat_g", profile) },
     { key: "sugars_g", label: "Sucres", reference: getReferenceForNutrient("sugars_g", profile) },
     { key: "fiber_g", label: "Fibres", reference: getReferenceForNutrient("fiber_g", profile) },
+    { key: "vitamin_c_mg", label: "Vitamine C", reference: getReferenceForNutrient("vitamin_c_mg", profile) },
+    { key: "vitamin_d_ug", label: "Vitamine D", reference: getReferenceForNutrient("vitamin_d_ug", profile) },
+    { key: "folate_ug", label: "Folates", reference: getReferenceForNutrient("folate_ug", profile) },
     { key: "magnesium_mg", label: "Magnésium", reference: getReferenceForNutrient("magnesium_mg", profile) },
     { key: "potassium_mg", label: "Potassium", reference: getReferenceForNutrient("potassium_mg", profile) },
     { key: "sodium_mg", label: "Sodium", reference: getReferenceForNutrient("sodium_mg", profile) }

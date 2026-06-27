@@ -8,6 +8,7 @@ export default function HomePage() {
           <a href="/reco">Reco</a>
           <a href="/longevite">Longévité</a>
           <a href="/ciqual">CIQUAL</a>
+          <a href="/ciqual2">CIQUAL 2</a>
           <a href="/cumul">Cumul</a>
         </div>
       </nav>
@@ -16,6 +17,7 @@ export default function HomePage() {
           <h1>NutriAtlas</h1>
           <div className="ctaRow">
             <a className="primaryCta" href="/ciqual">CIQUAL</a>
+            <a className="secondaryCta" href="/ciqual2">CIQUAL 2</a>
             <a className="secondaryCta" href="/profil">Profil</a>
           </div>
         </div>
