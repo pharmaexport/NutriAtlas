@@ -19,7 +19,7 @@ import {
 
 const STORAGE_KEY = "nutriatlas-cumul-v1";
 
-type NutrientItem = { key: string; label: string; unit: string; per100g: number; target?: number; role?: NutrientRole; };
+type NutrientItem = { key: string; label: string; unit: string; per100g: number; target?: number; role?: NutrientRole; sourceColumnName?: string | null; };
 type PortionOption = { label: string; grams: number; description: string; };
 type Props = { food: { code: string; name: string; group: string; subgroup?: string | null; }; portions: PortionOption[]; nutrients: NutrientItem[]; };
 type CumulItem = { id: string; foodCode: string; foodName: string; portionLabel: string; grams: number; nutrients: Array<{ key: string; label: string; unit: string; value: number; target?: number; }>; createdAt: string; };
@@ -48,14 +48,14 @@ function progressTone(role: NutrientRole, percent: number | null) {
 
 function percentLabel(percent: number | null) { return percent === null ? "-" : `${percent}%`; }
 function overflowLabel(percent: number | null, role: NutrientRole) { if (percent === null || percent <= 100) return null; const prefix = role === "limit" ? "dépassement" : "au-dessus"; return `+${percent - 100}% ${prefix}`; }
-function referenceText(reference: NutrientReference | null) { if (!reference) return "Aucun repère personnalisé disponible"; return `Repère : ${formatAmount(reference.target, reference.unit)} · ${reference.basis} · ${reference.source}`; }
+function referenceText(reference: NutrientReference | null) { if (!reference) return "Aucun repère disponible"; return `Repère : ${formatAmount(reference.target, reference.unit)}`; }
 
 function dailyStatus(nutrient: DisplayRow) {
   if (nutrient.percent === null) return "Sans repère";
   if (nutrient.percent > 100) return nutrient.role === "limit" ? "Dépassement" : "Au-dessus";
-  if (nutrient.percent === 100) return "100 % atteint";
+  if (nutrient.percent === 100) return "100 %";
   if (nutrient.percent >= 75) return "Proche";
-  return "En cours";
+  return "Sous cible";
 }
 
 function ProgressVisual({ nutrient }: { nutrient: DisplayRow }) {
@@ -251,6 +251,22 @@ function DailyRecapTable({ rows }: { rows: DisplayRow[] }) {
   );
 }
 
+function SourceNotes({ rows }: { rows: DisplayRow[] }) {
+  const references = Array.from(new Set(rows
+    .map((row) => row.reference ? `${row.reference.source} — ${row.reference.basis}` : null)
+    .filter(Boolean) as string[]));
+
+  return (
+    <section style={{ margin: "22px 0 6px", color: "#6a766f", fontSize: "0.72rem", lineHeight: 1.45, fontWeight: 700 }}>
+      <strong style={{ display: "block", color: "#4d5c54", fontSize: "0.78rem", marginBottom: "0.35rem" }}>Sources et calculs</strong>
+      <p style={{ margin: 0 }}>Valeurs nutritionnelles : CIQUAL / ANSES, exprimées pour la portion sélectionnée.</p>
+      {references.length > 0 ? (
+        <p style={{ margin: "0.25rem 0 0" }}>Repères : {references.slice(0, 6).join(" ; ")}{references.length > 6 ? " ; …" : ""}.</p>
+      ) : null}
+    </section>
+  );
+}
+
 export function FoodDetailClient({ food, portions, nutrients }: Props) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [added, setAdded] = useState(false);
@@ -321,9 +337,30 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
         <p>{portion.description}</p>
       </div>
 
-      <div className="portionSummary">
-        <div><span>Portion sélectionnée</span><strong>{portion.grams} g</strong><small>{portion.label}</small></div>
-        <div><span>Énergie portion</span><strong>{energy ? `${energy.value} kcal` : "-"}</strong><small>{typeof energy?.percent === "number" ? `${energy.percent}% du besoin profil` : "CIQUAL"}</small></div>
+      <div
+        className="portionEnergySummary"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: "1rem",
+          padding: "1.35rem 1.45rem",
+          borderRadius: "28px",
+          border: "1px solid rgba(16, 35, 27, 0.10)",
+          background: "rgba(255,255,255,0.72)",
+          boxShadow: "0 18px 54px rgba(16, 35, 27, 0.06)",
+          marginBottom: "18px"
+        }}
+      >
+        <div>
+          <span style={{ display: "block", color: "#66746c", fontWeight: 950 }}>Portion sélectionnée</span>
+          <strong style={{ display: "block", fontSize: "2.15rem", lineHeight: 1.05, color: "#10231b", marginTop: "0.35rem" }}>{portion.grams} g</strong>
+          <small style={{ display: "block", marginTop: "0.45rem", color: "#6d7871", fontWeight: 850 }}>{portion.label}</small>
+        </div>
+        <div>
+          <span style={{ display: "block", color: "#66746c", fontWeight: 950 }}>Énergie portion</span>
+          <strong style={{ display: "block", fontSize: "2.15rem", lineHeight: 1.05, color: "#10231b", marginTop: "0.35rem" }}>{energy ? `${energy.value} kcal` : "-"}</strong>
+          <small style={{ display: "block", marginTop: "0.45rem", color: "#6d7871", fontWeight: 850 }}>{typeof energy?.percent === "number" ? `${energy.percent}% du besoin profil` : "CIQUAL"}</small>
+        </div>
       </div>
 
       <DailyRecapTable rows={recapRows} />
@@ -360,6 +397,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
         })}
       </section>
 
+      <SourceNotes rows={rows} />
       <a className="secondaryCta" href="/search">Nouvelle recherche</a>
     </section>
   );
