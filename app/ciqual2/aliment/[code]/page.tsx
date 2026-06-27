@@ -6,6 +6,37 @@ type Category = "macros" | "glucides" | "lipides" | "mineraux" | "vitamines" | "
 type NutrientRow = { key: string; label: string; unit: string; value: number; sourceColumnName?: string | null; category: Category };
 
 const portionValues = [50, 100, 150, 200, 250, 300];
+const vitaminOrder = [
+  ["vitamin_c", "vitamine_c", "ascorbique"],
+  ["vitamin_d", "vitamine_d"],
+  ["vitamin_b9", "vitamine_b9", "folate", "folates", "folique"],
+  ["vitamin_b12", "vitamine_b12", "cobalamine"],
+  ["vitamin_a", "vitamine_a", "retinol", "carotene"],
+  ["vitamin_e", "vitamine_e", "tocopherol"],
+  ["vitamin_k", "vitamine_k", "phylloquinone"],
+  ["vitamin_b1", "vitamine_b1", "thiamine"],
+  ["vitamin_b2", "vitamine_b2", "riboflavine"],
+  ["vitamin_b3", "vitamine_b3", "niacine", "niacin"],
+  ["vitamin_b5", "vitamine_b5", "pantothenique", "pantothenic"],
+  ["vitamin_b6", "vitamine_b6", "pyridoxine"],
+  ["vitamin_b8", "vitamine_b8", "biotine", "biotin"]
+];
+const mineralOrder = [
+  ["calcium"],
+  ["fer", "iron"],
+  ["magnesium", "magnes"],
+  ["potassium"],
+  ["sodium", "sel", "chlorure", "chloride"],
+  ["zinc"],
+  ["iode", "iodine"],
+  ["selenium"],
+  ["phosphore", "phosphorus"],
+  ["cuivre", "copper"],
+  ["manganese"],
+  ["fluorure", "fluoride"],
+  ["chrome", "chromium"],
+  ["molybdene", "molybdenum"]
+];
 
 function normalize(value: string) {
   return value
@@ -18,6 +49,11 @@ function normalize(value: string) {
 
 function includesAny(value: string, needles: string[]) {
   return needles.some((needle) => value.includes(needle));
+}
+
+function firstMatchingOrder(text: string, groups: string[][]) {
+  const index = groups.findIndex((needles) => includesAny(text, needles));
+  return index === -1 ? null : index;
 }
 
 function categoryFor(nutrient: Pick<FullNutrient, "key" | "label" | "sourceColumnName">): Category {
@@ -48,6 +84,38 @@ function unitForSummaryKey(key: string) {
   return "";
 }
 
+function nutrientText(row: NutrientRow) {
+  return normalize(`${row.key} ${row.label} ${row.sourceColumnName || ""}`);
+}
+
+function isTotalSugar(text: string) {
+  return includesAny(text, ["sugars_g", "sucres_g", "sucres", "sugar_total", "sugars_total"]) && !includesAny(text, ["glucose", "fructose", "lactose", "maltose", "galactose"]);
+}
+
+function isMainFat(text: string) {
+  return includesAny(text, ["fat_g", "lipides_g", "lipides"]) && !includesAny(text, ["acide_gras", "ag_", "sature", "monoinsature", "polyinsature", "cholesterol", "omega", "epa", "dha"]);
+}
+
+function nutrientPriority(row: NutrientRow) {
+  const text = nutrientText(row);
+  const vitaminRank = firstMatchingOrder(text, vitaminOrder);
+  const mineralRank = firstMatchingOrder(text, mineralOrder);
+
+  if (includesAny(text, ["carbs_g", "glucides_g", "glucides", "carbohydrate"]) && !includesAny(text, ["amidon", "glucose", "fructose", "lactose", "maltose", "galactose", "polyol"])) return 10;
+  if (isTotalSugar(text)) return 11;
+  if (isMainFat(text)) return 20;
+  if (includesAny(text, ["sature", "saturated"]) && includesAny(text, ["gras", "fat", "ag_", "acide_gras"])) return 21;
+  if (includesAny(text, ["protein", "proteine", "proteines"])) return 30;
+  if (includesAny(text, ["fiber", "fibre", "fibres"])) return 40;
+  if (includesAny(text, ["energy", "energie"])) return 50;
+  if (vitaminRank !== null) return 100 + vitaminRank;
+  if (mineralRank !== null) return 200 + mineralRank;
+  if (includesAny(text, ["amidon", "polyol", "glucose", "fructose", "galactose", "lactose", "maltose"])) return 350;
+  if (includesAny(text, ["acide_gras", "ag_", "monoinsature", "polyinsature", "omega", "epa", "dha", "cholesterol"])) return 360;
+  if (includesAny(text, ["eau", "water", "alcool", "alcohol", "cendres"])) return 700;
+  return 900;
+}
+
 function rowsFor(food: { nutrients: Record<string, number>; fullNutrients?: FullNutrient[] }) {
   const rows: NutrientRow[] = food.fullNutrients?.length
     ? food.fullNutrients.map((nutrient) => ({
@@ -63,7 +131,7 @@ function rowsFor(food: { nutrients: Record<string, number>; fullNutrients?: Full
         return { ...row, category: categoryFor(row) };
       });
 
-  return rows.sort((a, b) => a.category.localeCompare(b.category, "fr") || a.label.localeCompare(b.label, "fr"));
+  return rows.sort((a, b) => nutrientPriority(a) - nutrientPriority(b) || a.label.localeCompare(b.label, "fr"));
 }
 
 function detailRowsFor(food: { nutrients: Record<string, number>; fullNutrients?: FullNutrient[] }) {
