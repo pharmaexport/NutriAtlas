@@ -1,6 +1,6 @@
 import { FoodDetailClient } from "./FoodDetailClient";
 import { getFoodByCode } from "../../../lib/nutrition-data";
-import { computeNutriScoreEstimate } from "../../../lib/nutriscore";
+import { computeNutritionRanking } from "../../../lib/nutrition-ranking";
 
 type PageProps = { params: { code: string } };
 
@@ -85,7 +85,7 @@ export default function FoodPage({ params }: PageProps) {
     );
   }
 
-  const nutriScore = computeNutriScoreEstimate(food);
+  const nutritionRanking = computeNutritionRanking(food);
 
   return (
     <main>
@@ -102,7 +102,7 @@ export default function FoodPage({ params }: PageProps) {
         food={{ code: food.code, name: food.name, group: food.group, subgroup: food.subgroup || null }}
         portions={[{ label: "100 g", grams: 100, description: "Référence nutritionnelle standard CIQUAL." }]}
         nutrients={nutrientsFor(food)}
-        nutriScore={nutriScore}
+        nutritionRanking={nutritionRanking}
       />
     </main>
   );
