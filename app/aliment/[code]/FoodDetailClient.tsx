@@ -51,6 +51,8 @@ type DisplayRow = NutrientItem & {
 };
 type RankingGrade = "A" | "B" | "C" | "D" | "E";
 type RankingEstimate = { grade: RankingGrade; confidence: "moyenne" | "faible" };
+type SnapshotTone = "good" | "watch" | "neutral";
+type SnapshotItem = { label: string; value: string; tone: SnapshotTone };
 
 const ENERGY_THRESHOLDS_KJ = [335, 670, 1005, 1340, 1675, 2010, 2345, 2680, 3015, 3350];
 const SATURATED_FAT_THRESHOLDS_G = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -115,12 +117,16 @@ function gradeFromTotal(total: number): RankingGrade {
   return "E";
 }
 
-function rowValue(rows: DisplayRow[], keys: string[], labelPatterns: string[] = []) {
+function findRow(rows: DisplayRow[], keys: string[], labelPatterns: string[] = []) {
   const normalizedPatterns = labelPatterns.map(normalizeText);
-  const row = rows.find((item) => {
+  return rows.find((item) => {
     const label = normalizeText(`${item.key} ${item.label} ${item.sourceColumnName || ""}`);
     return keys.includes(item.key) || normalizedPatterns.some((pattern) => label.includes(pattern));
-  });
+  }) || null;
+}
+
+function rowValue(rows: DisplayRow[], keys: string[], labelPatterns: string[] = []) {
+  const row = findRow(rows, keys, labelPatterns);
   return typeof row?.per100g === "number" ? row.per100g : null;
 }
 
@@ -176,7 +182,7 @@ function RankingBadge({ ranking }: { ranking: RankingEstimate | null }) {
   const grade = ranking?.grade || "unknown";
   return (
     <aside
-      aria-label={ranking ? `Ranking nutritionnel ${ranking.grade}, confiance ${ranking.confidence}` : "Ranking nutritionnel indisponible"}
+      aria-label={ranking ? `Indice nutritionnel ${ranking.grade}, confiance ${ranking.confidence}` : "Indice nutritionnel indisponible"}
       style={{
         position: "absolute",
         top: "22px",
@@ -195,7 +201,7 @@ function RankingBadge({ ranking }: { ranking: RankingEstimate | null }) {
         boxShadow: "0 20px 52px rgba(16, 35, 27, 0.12)"
       }}
     >
-      <span style={{ color: "#526158", fontSize: "0.72rem", fontWeight: 950, letterSpacing: "0.08em", textTransform: "uppercase" }}>Ranking</span>
+      <span style={{ color: "#526158", fontSize: "0.72rem", fontWeight: 950, letterSpacing: "0.08em", textTransform: "uppercase" }}>Indice</span>
       <strong
         style={{
           display: "grid",
@@ -216,6 +222,81 @@ function RankingBadge({ ranking }: { ranking: RankingEstimate | null }) {
         {ranking?.grade || "–"}
       </strong>
     </aside>
+  );
+}
+
+function snapshotStyle(tone: SnapshotTone) {
+  const isWatch = tone === "watch";
+  const isGood = tone === "good";
+  return {
+    padding: "0.85rem 0.95rem",
+    borderRadius: "22px",
+    background: isWatch ? "#fff2d6" : isGood ? "#eef5e8" : "rgba(255,255,255,0.74)",
+    border: isWatch ? "1px solid #d18b52" : "1px solid rgba(16, 35, 27, 0.08)",
+    color: isWatch ? "#5a3300" : isGood ? "#24552f" : "#33443b",
+    fontWeight: 950
+  };
+}
+
+function buildSnapshot(rows: DisplayRow[], food: Props["food"], energy: DisplayRow | undefined): SnapshotItem[] {
+  const items: SnapshotItem[] = [];
+  const isFruitVeg = hasFruitVegetableLegumeSignal(food);
+  const fiber = findRow(rows, ["fiber_g"], ["fibres alimentaires"]);
+  const sugars = findRow(rows, ["sugars_g"], ["sucres"]);
+  const salt = findRow(rows, ["salt_g"], ["sel chlorure de sodium"]);
+  const sodium = findRow(rows, ["sodium_mg"], ["sodium"]);
+  const potassium = findRow(rows, ["potassium_mg"], ["potassium"]);
+
+  if (energy) {
+    const tone: SnapshotTone = energy.value > 400 ? "watch" : energy.value <= 150 ? "good" : "neutral";
+    items.push({ label: energy.value <= 150 ? "Léger" : "Énergie", value: `${energy.value} kcal`, tone });
+  }
+
+  if (fiber && fiber.value >= 3) {
+    items.push({ label: "Fibres +", value: `${fiber.value} g${fiber.percent !== null ? ` · ${fiber.percent}% jour` : ""}`, tone: "good" });
+  }
+
+  if (sugars && sugars.value >= 10) {
+    items.push({ label: isFruitVeg ? "Sucres naturels" : "Sucres à surveiller", value: `${sugars.value} g${sugars.percent !== null ? ` · ${sugars.percent}% jour` : ""}`, tone: isFruitVeg ? "neutral" : "watch" });
+  }
+
+  if (salt && salt.value <= 0.3) {
+    items.push({ label: "Très peu salé", value: `${salt.value} g sel`, tone: "good" });
+  } else if (sodium && sodium.value <= 120) {
+    items.push({ label: "Très peu salé", value: `${sodium.value} mg sodium`, tone: "good" });
+  } else if (salt && salt.value > 1.5) {
+    items.push({ label: "Sel élevé", value: `${salt.value} g sel`, tone: "watch" });
+  }
+
+  if (potassium && potassium.percent !== null && potassium.percent >= 5) {
+    items.push({ label: "Potassium", value: `${potassium.value} mg · ${potassium.percent}% jour`, tone: "good" });
+  }
+
+  return items.slice(0, 4);
+}
+
+function ConsumerSnapshot({ items, isFruitVeg }: { items: SnapshotItem[]; isFruitVeg: boolean }) {
+  if (items.length === 0) return null;
+
+  return (
+    <section
+      className="highlightCard"
+      style={{
+        margin: "0 0 18px",
+        background: "rgba(255,255,255,0.82)"
+      }}
+    >
+      <span>À retenir</span>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "0.7rem" }}>
+        {items.map((item) => (
+          <strong style={snapshotStyle(item.tone)} key={`${item.label}-${item.value}`}>
+            <small style={{ display: "block", opacity: 0.78, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.25rem" }}>{item.label}</small>
+            {item.value}
+          </strong>
+        ))}
+      </div>
+      {isFruitVeg ? <p style={{ margin: "0.75rem 0 0", color: "#5b695f", fontWeight: 850 }}>Bon candidat collation ou dessert ; à équilibrer sur la journée avec protéines, bonnes graisses et autres végétaux.</p> : null}
+    </section>
   );
 }
 
@@ -240,7 +321,7 @@ function HighlightCard({ highlights }: { highlights: DisplayRow[] }) {
 
   return (
     <section className="highlightCard" style={{ margin: "0 0 18px" }}>
-      <span>Contributions principales</span>
+      <span>Apports notables</span>
       <div>{highlights.map((item) => <strong style={highlightPillStyle(item)} key={`${item.key}-${item.label}`}>{item.label} · {percentLabel(item.percent)}</strong>)}</div>
     </section>
   );
@@ -349,6 +430,8 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
 
   const energy = rows.find(isEnergyKcal);
   const ranking = useMemo(() => computeRanking(rows, food), [rows, food]);
+  const snapshot = useMemo(() => buildSnapshot(rows, food, energy), [rows, food, energy]);
+  const isFruitVeg = hasFruitVegetableLegumeSignal(food);
   const highlights = rows
     .filter((row) => typeof row.percent === "number" && !isEnergyKcal(row))
     .sort((a, b) => {
@@ -385,6 +468,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
         <RankingBadge ranking={ranking} />
       </div>
 
+      <ConsumerSnapshot items={snapshot} isFruitVeg={isFruitVeg} />
       <HighlightCard highlights={highlights} />
 
       <div className="portionControlCard">
