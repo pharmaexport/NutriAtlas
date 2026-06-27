@@ -19,16 +19,58 @@ import {
 
 const STORAGE_KEY = "nutriatlas-cumul-v1";
 
-type NutrientItem = { key: string; label: string; unit: string; per100g: number; target?: number; role?: NutrientRole; sourceColumnName?: string | null; };
+type NutrientItem = {
+  key: string;
+  label: string;
+  unit: string;
+  per100g: number;
+  target?: number;
+  role?: NutrientRole;
+  sourceColumnName?: string | null;
+};
 type PortionOption = { label: string; grams: number; description: string; };
-type Props = { food: { code: string; name: string; group: string; subgroup?: string | null; }; portions: PortionOption[]; nutrients: NutrientItem[]; };
-type CumulItem = { id: string; foodCode: string; foodName: string; portionLabel: string; grams: number; nutrients: Array<{ key: string; label: string; unit: string; value: number; target?: number; }>; createdAt: string; };
-type DisplayRow = NutrientItem & { value: number; percent: number | null; reference: NutrientReference | null; role: NutrientRole; };
+type Props = {
+  food: { code: string; name: string; group: string; subgroup?: string | null; };
+  portions: PortionOption[];
+  nutrients: NutrientItem[];
+};
+type CumulItem = {
+  id: string;
+  foodCode: string;
+  foodName: string;
+  portionLabel: string;
+  grams: number;
+  nutrients: Array<{ key: string; label: string; unit: string; value: number; target?: number; }>;
+  createdAt: string;
+};
+type DisplayRow = NutrientItem & {
+  value: number;
+  percent: number | null;
+  reference: NutrientReference | null;
+  role: NutrientRole;
+};
 
 function round(value: number) { return Math.round(value * 10) / 10; }
 function valueForPortion(per100g: number, grams: number) { return round((per100g * grams) / 100); }
-function isEnergyKcal(key: string) { const normalized = key.toLowerCase(); return (normalized.includes("energy") || normalized.includes("energie")) && normalized.includes("kcal"); }
 function amountLabel(value: number, unit: string) { return `${value} ${unit}`.trim(); }
+function percentLabel(percent: number | null) { return percent === null ? "-" : `${percent}%`; }
+function percentOnlyLabel(percent: number | null) { return percent === null ? "" : `${percent}%`; }
+function referenceText(reference: NutrientReference | null) { if (!reference) return "Aucun repère disponible"; return `Repère : ${formatAmount(reference.target, reference.unit)}`; }
+
+function normalizeText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isEnergyKcal(row: Pick<DisplayRow, "key" | "label" | "unit">) {
+  const text = normalizeText(`${row.key} ${row.label}`);
+  return row.unit.toLowerCase() === "kcal" && (text.includes("energie") || text.includes("energy"));
+}
 
 function readCumulItems(): CumulItem[] {
   const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -46,146 +88,10 @@ function progressTone(role: NutrientRole, percent: number | null) {
   return "toneNeutral";
 }
 
-function percentLabel(percent: number | null) { return percent === null ? "-" : `${percent}%`; }
-function overflowLabel(percent: number | null, role: NutrientRole) { if (percent === null || percent <= 100) return null; const prefix = role === "limit" ? "dépassement" : "au-dessus"; return `+${percent - 100}% ${prefix}`; }
-function referenceText(reference: NutrientReference | null) { if (!reference) return "Aucun repère disponible"; return `Repère : ${formatAmount(reference.target, reference.unit)}`; }
-
-function dailyStatus(nutrient: DisplayRow) {
-  if (nutrient.percent === null) return "Sans repère";
-  if (nutrient.percent > 100) return nutrient.role === "limit" ? "Dépassement" : "Au-dessus";
-  if (nutrient.percent === 100) return "100 %";
-  if (nutrient.percent >= 75) return "Proche";
-  return "Sous cible";
-}
-
-function ProgressVisual({ nutrient }: { nutrient: DisplayRow }) {
-  const percent = nutrient.percent;
-  const clampedPercent = Math.min(percent || 0, 100);
-  const overflowPercent = Math.max((percent || 0) - 100, 0);
-  const isExceeded = overflowPercent > 0;
-  const valueCursorPercent = percent === null ? 0 : Math.max(1.5, Math.min(clampedPercent, 98.5));
-  const safeLabelPercent = percent === null ? 0 : isExceeded ? 94 : Math.max(6, Math.min(clampedPercent, 94));
-  const targetShiftPx = isExceeded ? 118 : 0;
-  const target = nutrient.reference ? formatAmount(nutrient.reference.target, nutrient.reference.unit) : null;
-  const currentLabel = amountLabel(nutrient.value, nutrient.unit);
-  const cursorColor = isExceeded ? "#d18b52" : "#2e7d3f";
-
-  return (
-    <div className="progressVisual" style={{ position: "relative", paddingTop: isExceeded ? "3.15rem" : "2.65rem", marginTop: "1rem" }}>
-      <div className="progressScale" style={{ position: "absolute", inset: "0 0 auto 0", height: "2.65rem", pointerEvents: "none" }} aria-hidden="true">
-        {target ? (
-          <span
-            className="targetValuePill"
-            style={{
-              position: "absolute",
-              right: `${targetShiftPx}px`,
-              top: isExceeded ? "0.1rem" : 0,
-              textAlign: "right",
-              color: isExceeded ? "#7a4a00" : "#31493d",
-              fontWeight: 950,
-              whiteSpace: "nowrap"
-            }}
-          >
-            <small style={{ display: "block", marginBottom: "0.16rem", fontSize: "0.62rem", lineHeight: 1, opacity: 0.82, textTransform: "uppercase", letterSpacing: "0.05em" }}>Seuil 100 %</small>
-            <strong style={{ display: "block", fontSize: "0.86rem", lineHeight: 1 }}>{target}</strong>
-          </span>
-        ) : null}
-        <span
-          className="currentValuePill"
-          style={{
-            position: "absolute",
-            left: `${safeLabelPercent}%`,
-            top: 0,
-            transform: "translateX(-50%)",
-            padding: isExceeded ? "0.34rem 0.68rem" : "0.28rem 0.58rem",
-            borderRadius: "999px",
-            background: isExceeded ? "#fff2d6" : "rgba(238, 245, 232, 0.98)",
-            border: isExceeded ? "2px solid #d18b52" : "1px solid rgba(16, 35, 27, 0.09)",
-            color: isExceeded ? "#4b2800" : "#10231b",
-            fontWeight: 950,
-            fontSize: "0.82rem",
-            whiteSpace: "nowrap",
-            boxShadow: isExceeded ? "0 8px 18px rgba(117, 67, 0, 0.12)" : "none"
-          }}
-        >
-          {isExceeded ? <small style={{ display: "block", marginBottom: "0.12rem", fontSize: "0.58rem", lineHeight: 1, textTransform: "uppercase", letterSpacing: "0.06em", opacity: 0.8 }}>Apport</small> : null}
-          {currentLabel}
-        </span>
-      </div>
-      <div
-        className="progressTrack"
-        style={{
-          position: "relative",
-          height: isExceeded ? "18px" : "14px",
-          borderRadius: "999px",
-          background: "rgba(237, 244, 232, 0.95)",
-          border: isExceeded ? "2px solid #d18b52" : "1px solid rgba(16, 35, 27, 0.08)",
-          overflow: "visible",
-          boxShadow: isExceeded ? "0 0 0 4px rgba(209, 139, 82, 0.14)" : "none"
-        }}
-      >
-        <span style={{ position: "absolute", inset: 0, borderRadius: "999px", overflow: "hidden" }}>
-          <i style={{ position: "absolute", inset: "0 auto 0 0", width: `${clampedPercent}%`, borderRadius: "999px", background: "linear-gradient(90deg, #2e7d3f, #86b65d)" }} />
-          {isExceeded ? <b style={{ position: "absolute", inset: "0 0 0 auto", width: "16%", borderRadius: "999px", background: "repeating-linear-gradient(135deg, #d18b52 0 6px, #f0c06b 6px 12px)" }} /> : null}
-        </span>
-        {percent !== null ? (
-          <>
-            <span
-              aria-hidden="true"
-              style={{
-                position: "absolute",
-                left: `${valueCursorPercent}%`,
-                top: "-20px",
-                width: "2px",
-                height: "24px",
-                transform: "translateX(-50%)",
-                borderRadius: "999px",
-                background: cursorColor,
-                zIndex: 4
-              }}
-            />
-            <span
-              aria-hidden="true"
-              style={{
-                position: "absolute",
-                left: `${valueCursorPercent}%`,
-                top: "50%",
-                width: isExceeded ? "20px" : "18px",
-                height: isExceeded ? "20px" : "18px",
-                transform: "translate(-50%, -50%)",
-                borderRadius: "999px",
-                background: isExceeded ? "#fff2d6" : "#ffffff",
-                border: isExceeded ? "4px solid #d18b52" : "4px solid #2e7d3f",
-                boxShadow: isExceeded ? "0 4px 14px rgba(117, 67, 0, 0.22)" : "0 4px 12px rgba(16, 35, 27, 0.18)",
-                zIndex: 5
-              }}
-            />
-          </>
-        ) : null}
-      </div>
-      {isExceeded ? (
-        <div
-          style={{
-            marginTop: "0.7rem",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.45rem",
-            padding: "0.45rem 0.7rem",
-            borderRadius: "999px",
-            background: "#fff2d6",
-            border: "1px solid #d18b52",
-            color: "#5a3300",
-            fontWeight: 950,
-            fontSize: "0.82rem"
-          }}
-        >
-          <span>Seuil dépassé</span>
-          <strong>{percentLabel(percent)}</strong>
-          <small style={{ fontWeight: 900 }}>{overflowLabel(percent, nutrient.role)}</small>
-        </div>
-      ) : null}
-    </div>
-  );
+function overflowLabel(percent: number | null, role: NutrientRole) {
+  if (percent === null || percent <= 100) return null;
+  const prefix = role === "limit" ? "dépassement" : "au-dessus";
+  return `+${percent - 100}% ${prefix}`;
 }
 
 function DailyRecapTable({ rows }: { rows: DisplayRow[] }) {
@@ -202,9 +108,9 @@ function DailyRecapTable({ rows }: { rows: DisplayRow[] }) {
       }}
     >
       <div style={{ padding: "18px 18px 10px" }}>
-        <span style={{ display: "block", color: "#5d6b62", fontSize: "0.78rem", fontWeight: 950, letterSpacing: "0.08em", textTransform: "uppercase" }}>Récap journée</span>
+        <span style={{ display: "block", color: "#5d6b62", fontSize: "0.78rem", fontWeight: 950, letterSpacing: "0.08em", textTransform: "uppercase" }}>CIQUAL complet</span>
         <strong style={{ display: "block", marginTop: "4px", color: "#10231b", fontSize: "1.15rem" }}>Valeurs réelles et % cible jour</strong>
-        <small style={{ display: "block", marginTop: "6px", color: "#6a766f", fontWeight: 800 }}>Pour la portion sélectionnée, comparée aux repères journaliers du profil.</small>
+        <small style={{ display: "block", marginTop: "6px", color: "#6a766f", fontWeight: 800 }}>Toutes les valeurs CIQUAL disponibles pour la portion, avec % seulement quand un repère existe.</small>
       </div>
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", minWidth: "430px", borderCollapse: "collapse" }}>
@@ -219,27 +125,27 @@ function DailyRecapTable({ rows }: { rows: DisplayRow[] }) {
             {rows.map((nutrient) => {
               const exceeded = (nutrient.percent || 0) > 100;
               return (
-                <tr key={`recap-${nutrient.key}`} style={{ borderTop: "1px solid rgba(16, 35, 27, 0.08)" }}>
+                <tr key={`recap-${nutrient.key}-${nutrient.label}`} style={{ borderTop: "1px solid rgba(16, 35, 27, 0.08)" }}>
                   <td style={{ padding: "12px 18px", color: "#10231b", fontWeight: 900 }}>{nutrient.label}</td>
                   <td style={{ padding: "12px 14px", textAlign: "right", color: "#10231b", fontWeight: 950 }}>{amountLabel(nutrient.value, nutrient.unit)}</td>
                   <td style={{ padding: "12px 18px 12px 14px", textAlign: "right" }}>
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "0.35rem",
-                        padding: "0.35rem 0.6rem",
-                        borderRadius: "999px",
-                        background: exceeded ? "#fff2d6" : "#eef5e8",
-                        border: exceeded ? "1px solid #d18b52" : "1px solid rgba(16, 35, 27, 0.08)",
-                        color: exceeded ? "#5a3300" : "#24552f",
-                        fontWeight: 950,
-                        whiteSpace: "nowrap"
-                      }}
-                    >
-                      {percentLabel(nutrient.percent)}
-                      <small style={{ fontWeight: 900, opacity: 0.82 }}>{dailyStatus(nutrient)}</small>
-                    </span>
+                    {nutrient.percent !== null ? (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          padding: "0.35rem 0.6rem",
+                          borderRadius: "999px",
+                          background: exceeded ? "#fff2d6" : "#eef5e8",
+                          border: exceeded ? "1px solid #d18b52" : "1px solid rgba(16, 35, 27, 0.08)",
+                          color: exceeded ? "#5a3300" : "#24552f",
+                          fontWeight: 950,
+                          whiteSpace: "nowrap"
+                        }}
+                      >
+                        {percentOnlyLabel(nutrient.percent)}
+                      </span>
+                    ) : null}
                   </td>
                 </tr>
               );
@@ -259,7 +165,7 @@ function SourceNotes({ rows }: { rows: DisplayRow[] }) {
   return (
     <section style={{ margin: "22px 0 6px", color: "#6a766f", fontSize: "0.72rem", lineHeight: 1.45, fontWeight: 700 }}>
       <strong style={{ display: "block", color: "#4d5c54", fontSize: "0.78rem", marginBottom: "0.35rem" }}>Sources et calculs</strong>
-      <p style={{ margin: 0 }}>Valeurs nutritionnelles : CIQUAL / ANSES, exprimées pour la portion sélectionnée.</p>
+      <p style={{ margin: 0 }}>Valeurs nutritionnelles : CIQUAL / ANSES, exprimées pour la portion sélectionnée. {rows.length} constituants disponibles sur cette fiche.</p>
       {references.length > 0 ? (
         <p style={{ margin: "0.25rem 0 0" }}>Repères : {references.slice(0, 6).join(" ; ")}{references.length > 6 ? " ; …" : ""}.</p>
       ) : null}
@@ -289,10 +195,9 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
     return { ...nutrient, value, percent, reference, role };
   }), [nutrients, portion.grams, profile, customEnergyKcal]);
 
-  const energy = rows.find((row) => isEnergyKcal(row.key));
-  const recapRows = useMemo(() => rows.filter((row) => typeof row.value === "number"), [rows]);
+  const energy = rows.find(isEnergyKcal);
   const highlights = rows
-    .filter((row) => typeof row.percent === "number" && !isEnergyKcal(row.key))
+    .filter((row) => typeof row.percent === "number" && !isEnergyKcal(row))
     .sort((a, b) => {
       const aRisk = a.role === "limit" && (a.percent || 0) > 100 ? 1000 : 0;
       const bRisk = b.role === "limit" && (b.percent || 0) > 100 ? 1000 : 0;
@@ -363,7 +268,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
         </div>
       </div>
 
-      <DailyRecapTable rows={recapRows} />
+      <DailyRecapTable rows={rows} />
 
       <div className="actionRow">
         <button className="primaryCta addButton" type="button" onClick={addToCumul}>{added ? "Ajouté au cumul" : "Ajouter au cumul"}</button>
@@ -379,18 +284,18 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
       ) : null}
 
       <section className="nutrientTable nutrientDashboard">
-        <div className="tableHeader"><span>Valeurs pour la portion</span><span>% des repères profil</span></div>
+        <div className="tableHeader"><span>Données CIQUAL complètes</span><span>% repère profil</span></div>
         {rows.map((nutrient) => {
           const overflow = overflowLabel(nutrient.percent, nutrient.role);
           return (
-            <div className={`nutrientLine nutrientProgress ${progressTone(nutrient.role, nutrient.percent)}`} key={nutrient.key}>
+            <div className={`nutrientLine nutrientProgress ${progressTone(nutrient.role, nutrient.percent)}`} key={`${nutrient.key}-${nutrient.label}`}>
               <div className="nutrientMain">
                 <span>{nutrient.label}</span>
                 <strong>{amountLabel(nutrient.value, nutrient.unit)}</strong>
                 <small>{referenceText(nutrient.reference)}</small>
+                {nutrient.sourceColumnName ? <small>CIQUAL : {nutrient.sourceColumnName}</small> : null}
                 {nutrient.reference?.note ? <small>{nutrient.reference.note}</small> : null}
               </div>
-              <ProgressVisual nutrient={nutrient} />
               <em>{percentLabel(nutrient.percent)}{overflow ? <small>{overflow}</small> : null}</em>
             </div>
           );
