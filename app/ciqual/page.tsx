@@ -10,6 +10,7 @@ export default function CiqualPage() {
           <a href="/reco">Reco profil</a>
           <a href="/longevite">Longévité</a>
           <a href="/ciqual">CIQUAL</a>
+          <a href="/ciqual2">CIQUAL 2</a>
           <a href="/cumul">Cumul</a>
         </div>
       </nav>
