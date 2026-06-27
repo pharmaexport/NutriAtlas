@@ -49,6 +49,7 @@ type DisplayRow = NutrientItem & {
   reference: NutrientReference | null;
   role: NutrientRole;
 };
+type RecapRow = DisplayRow & { displayLabel: string; isSub?: boolean; isDerived?: boolean };
 type RankingGrade = "A" | "B" | "C" | "D" | "E";
 type RankingEstimate = { grade: RankingGrade; confidence: "moyenne" | "faible" };
 type SnapshotTone = "good" | "watch" | "neutral";
@@ -103,6 +104,30 @@ function overflowLabel(percent: number | null, role: NutrientRole) {
   if (percent === null || percent <= 100) return null;
   const prefix = role === "limit" ? "dépassement" : "au-dessus";
   return `+${percent - 100}% ${prefix}`;
+}
+
+function percentChipStyle(percent: number | null, role: NutrientRole) {
+  if (percent === null) {
+    return { background: "rgba(255,255,255,0.62)", border: "1px solid rgba(16, 35, 27, 0.08)", color: "#6b766f" };
+  }
+
+  if (role === "limit") {
+    if (percent >= 100) return { background: "#fde7e3", border: "1px solid #d85b49", color: "#8a1f12" };
+    if (percent >= 50) return { background: "#fff2d6", border: "1px solid #d18b52", color: "#7a4a00" };
+    if (percent >= 20) return { background: "#f7f1dc", border: "1px solid #d8c78a", color: "#6b5a1d" };
+    return { background: "#eef5e8", border: "1px solid rgba(16, 35, 27, 0.08)", color: "#24552f" };
+  }
+
+  if (role === "positive") {
+    if (percent >= 100) return { background: "#dff3e4", border: "1px solid #4ca56a", color: "#174f2a" };
+    if (percent >= 50) return { background: "#e8f4df", border: "1px solid #85b66a", color: "#24552f" };
+    if (percent >= 20) return { background: "#eef5e8", border: "1px solid #b9d3aa", color: "#35633f" };
+    return { background: "#f5f7f2", border: "1px solid rgba(16, 35, 27, 0.08)", color: "#5f6c64" };
+  }
+
+  if (percent >= 100) return { background: "#eef5e8", border: "1px solid #b9d3aa", color: "#24552f" };
+  if (percent >= 50) return { background: "#f7f1dc", border: "1px solid #d8c78a", color: "#6b5a1d" };
+  return { background: "#f5f7f2", border: "1px solid rgba(16, 35, 27, 0.08)", color: "#5f6c64" };
 }
 
 function thresholdCount(value: number, thresholds: readonly number[]) {
@@ -238,8 +263,8 @@ function snapshotStyle(tone: SnapshotTone) {
   };
 }
 
-function buildSnapshot(rows: DisplayRow[], food: Props["food"], energy: DisplayRow | undefined): SnapshotItem[] {
-  const items: SnapshotItem[] = [];
+function buildSnapshot(rows: DisplayRow[], food: Props["food"], energy: DisplayRow | undefined, portion: PortionOption): SnapshotItem[] {
+  const items: SnapshotItem[] = [{ label: "Ration", value: `${portion.grams} g`, tone: "neutral" }];
   const isFruitVeg = hasFruitVegetableLegumeSignal(food);
   const fiber = findRow(rows, ["fiber_g"], ["fibres alimentaires"]);
   const sugars = findRow(rows, ["sugars_g"], ["sucres"]);
@@ -301,16 +326,15 @@ function ConsumerSnapshot({ items, isFruitVeg }: { items: SnapshotItem[]; isFrui
 }
 
 function highlightPillStyle(item: DisplayRow) {
-  const exceeded = (item.percent || 0) > 100;
-  const isLimit = item.role === "limit";
+  const chip = percentChipStyle(item.percent, item.role);
   return {
     display: "inline-flex",
     alignItems: "center",
     padding: "0.55rem 0.8rem",
     borderRadius: "999px",
-    background: exceeded && isLimit ? "#fff2d6" : "#eef5e8",
-    border: exceeded && isLimit ? "1px solid #d18b52" : "1px solid rgba(16, 35, 27, 0.08)",
-    color: exceeded && isLimit ? "#5a3300" : "#24552f",
+    background: chip.background,
+    border: chip.border,
+    color: chip.color,
     fontWeight: 950,
     whiteSpace: "nowrap" as const
   };
@@ -327,7 +351,79 @@ function HighlightCard({ highlights }: { highlights: DisplayRow[] }) {
   );
 }
 
-function DailyRecapTable({ rows }: { rows: DisplayRow[] }) {
+function simpleSugarRow(rows: DisplayRow[]): RecapRow | null {
+  const sugarReference = findRow(rows, ["sugars_g"], ["sucres"]);
+  const sugarParts = [
+    findRow(rows, [], ["glucose"]),
+    findRow(rows, [], ["fructose"]),
+    findRow(rows, [], ["saccharose"]),
+    findRow(rows, [], ["lactose"]),
+    findRow(rows, [], ["maltose"]),
+    findRow(rows, [], ["galactose"])
+  ].filter(Boolean) as DisplayRow[];
+  const value = round(sugarParts.reduce((sum, row) => sum + row.value, 0));
+
+  if (!sugarReference || value <= 0) return null;
+
+  return {
+    ...sugarReference,
+    key: "quick_sugars_g",
+    label: "Sucres rapides estimés",
+    displayLabel: "dont sucres rapides",
+    value,
+    percent: coveragePercent(value, sugarReference.reference?.target || sugarReference.target || null),
+    role: "limit",
+    isSub: true,
+    isDerived: true,
+    sourceColumnName: "glucose + fructose + saccharose + lactose + maltose + galactose"
+  };
+}
+
+function consumerRecapRows(rows: DisplayRow[]): RecapRow[] {
+  const output: RecapRow[] = [];
+  const added = new Set<string>();
+
+  function add(row: DisplayRow | null, displayLabel?: string, isSub = false) {
+    if (!row) return;
+    const key = `${row.key}-${displayLabel || row.label}`;
+    if (added.has(key)) return;
+    added.add(key);
+    output.push({ ...row, displayLabel: displayLabel || row.label, isSub });
+  }
+
+  add(rows.find(isEnergyKcal) || null, "Énergie");
+  add(findRow(rows, ["protein_g"], ["proteines"]), "Protéines");
+  add(findRow(rows, ["carbs_g"], ["glucides"]), "Glucides");
+  add(findRow(rows, ["sugars_g"], ["sucres"]), "dont sucres", true);
+  const quickSugars = simpleSugarRow(rows);
+  if (quickSugars) output.push(quickSugars);
+  add(findRow(rows, ["fiber_g"], ["fibres alimentaires"]), "Fibres");
+  add(findRow(rows, ["fat_g"], ["lipides"]), "Lipides");
+  add(findRow(rows, ["saturated_fat_g"], ["acides gras satures", "ag satures"]), "dont saturés", true);
+  add(findRow(rows, ["salt_g"], ["sel chlorure de sodium"]), "Sel");
+  add(findRow(rows, ["sodium_mg"], ["sodium"]), "dont sodium", true);
+
+  add(findRow(rows, ["potassium_mg"], ["potassium"]), "Potassium");
+  add(findRow(rows, ["calcium_mg"], ["calcium"]), "Calcium");
+  add(findRow(rows, ["magnesium_mg"], ["magnesium"]), "Magnésium");
+  add(findRow(rows, ["iron_mg"], ["fer"]), "Fer");
+  add(findRow(rows, ["zinc_mg"], ["zinc"]), "Zinc");
+  add(findRow(rows, ["iodine_ug"], ["iode"]), "Iode");
+  add(findRow(rows, ["selenium_ug"], ["selenium"]), "Sélénium");
+
+  add(findRow(rows, ["vitamin_c_mg"], ["vitamine c"]), "Vitamine C");
+  add(findRow(rows, ["vitamin_d_ug"], ["vitamine d"]), "Vitamine D");
+  add(findRow(rows, ["folate_ug"], ["folates totaux", "vitamine b9"]), "Vitamine B9 / folates");
+  add(findRow(rows, ["vitamin_b12_ug"], ["vitamine b12"]), "Vitamine B12");
+  add(findRow(rows, ["vitamin_b6_mg"], ["vitamine b6"]), "Vitamine B6");
+  add(findRow(rows, ["vitamin_a_ug"], ["activite vitaminique a", "vitamine a"]), "Vitamine A");
+  add(findRow(rows, ["vitamin_e_mg"], ["vitamine e"]), "Vitamine E");
+  add(findRow(rows, [], ["vitamine k1"]), "Vitamine K");
+
+  return output.filter((row) => row.value !== 0 || row.percent !== null || row.isSub);
+}
+
+function DailyRecapTable({ rows }: { rows: RecapRow[] }) {
   return (
     <section
       className="dailyRecapTable"
@@ -341,51 +437,74 @@ function DailyRecapTable({ rows }: { rows: DisplayRow[] }) {
       }}
     >
       <div style={{ padding: "18px 18px 10px" }}>
-        <span style={{ display: "block", color: "#5d6b62", fontSize: "0.78rem", fontWeight: 950, letterSpacing: "0.08em", textTransform: "uppercase" }}>CIQUAL complet</span>
+        <span style={{ display: "block", color: "#5d6b62", fontSize: "0.78rem", fontWeight: 950, letterSpacing: "0.08em", textTransform: "uppercase" }}>Repères utiles</span>
         <strong style={{ display: "block", marginTop: "4px", color: "#10231b", fontSize: "1.15rem" }}>Valeurs réelles et % cible jour</strong>
-        <small style={{ display: "block", marginTop: "6px", color: "#6a766f", fontWeight: 800 }}>Toutes les valeurs CIQUAL disponibles pour la portion, avec % seulement quand un repère existe.</small>
+        <small style={{ display: "block", marginTop: "6px", color: "#6a766f", fontWeight: 800 }}>Lecture simplifiée : macronutriments, “dont”, minéraux et vitamines utiles au quotidien.</small>
       </div>
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", minWidth: "430px", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ color: "#5d6b62", fontSize: "0.76rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              <th style={{ padding: "12px 18px", textAlign: "left" }}>Nutriment</th>
-              <th style={{ padding: "12px 14px", textAlign: "right" }}>Valeur réelle</th>
-              <th style={{ padding: "12px 18px 12px 14px", textAlign: "right" }}>% cible jour</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((nutrient) => {
-              const exceeded = (nutrient.percent || 0) > 100;
-              return (
-                <tr key={`recap-${nutrient.key}-${nutrient.label}`} style={{ borderTop: "1px solid rgba(16, 35, 27, 0.08)" }}>
-                  <td style={{ padding: "12px 18px", color: "#10231b", fontWeight: 900 }}>{nutrient.label}</td>
-                  <td style={{ padding: "12px 14px", textAlign: "right", color: "#10231b", fontWeight: 950 }}>{amountLabel(nutrient.value, nutrient.unit)}</td>
-                  <td style={{ padding: "12px 18px 12px 14px", textAlign: "right" }}>
-                    {nutrient.percent !== null ? (
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          padding: "0.35rem 0.6rem",
-                          borderRadius: "999px",
-                          background: exceeded ? "#fff2d6" : "#eef5e8",
-                          border: exceeded ? "1px solid #d18b52" : "1px solid rgba(16, 35, 27, 0.08)",
-                          color: exceeded ? "#5a3300" : "#24552f",
-                          fontWeight: 950,
-                          whiteSpace: "nowrap"
-                        }}
-                      >
-                        {percentOnlyLabel(nutrient.percent)}
-                      </span>
-                    ) : null}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div style={{ width: "100%" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) minmax(58px, 80px) minmax(52px, 72px)",
+            gap: "0.45rem",
+            alignItems: "center",
+            padding: "10px 10px 12px",
+            color: "#5d6b62",
+            fontSize: "0.68rem",
+            fontWeight: 950,
+            letterSpacing: "0.05em",
+            textTransform: "uppercase",
+            borderTop: "1px solid rgba(16, 35, 27, 0.08)",
+            borderBottom: "1px solid rgba(16, 35, 27, 0.08)"
+          }}
+        >
+          <span>Nutriment</span>
+          <span style={{ textAlign: "right" }}>Valeur</span>
+          <span style={{ textAlign: "right" }}>% jour</span>
+        </div>
+        {rows.map((nutrient) => {
+          const chip = percentChipStyle(nutrient.percent, nutrient.role);
+          return (
+            <div
+              key={`recap-${nutrient.key}-${nutrient.displayLabel}`}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "minmax(0, 1fr) minmax(58px, 80px) minmax(52px, 72px)",
+                gap: "0.45rem",
+                alignItems: "center",
+                minWidth: 0,
+                borderTop: "1px solid rgba(16, 35, 27, 0.08)",
+                padding: "12px 10px"
+              }}
+            >
+              <span style={{ color: "#10231b", fontWeight: nutrient.isSub ? 800 : 900, lineHeight: 1.2, overflowWrap: "anywhere", minWidth: 0, paddingLeft: nutrient.isSub ? "0.7rem" : 0 }}>{nutrient.displayLabel}{nutrient.isDerived ? "*" : ""}</span>
+              <strong style={{ color: "#10231b", fontWeight: 950, textAlign: "right", lineHeight: 1.15, overflowWrap: "anywhere" }}>{amountLabel(nutrient.value, nutrient.unit)}</strong>
+              <span style={{ textAlign: "right" }}>
+                {nutrient.percent !== null ? (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minWidth: "50px",
+                      padding: "0.34rem 0.5rem",
+                      borderRadius: "999px",
+                      background: chip.background,
+                      border: chip.border,
+                      color: chip.color,
+                      fontWeight: 950,
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    {percentOnlyLabel(nutrient.percent)}
+                  </span>
+                ) : null}
+              </span>
+            </div>
+          );
+        })}
       </div>
+      {rows.some((row) => row.isDerived) ? <small style={{ display: "block", padding: "0 18px 16px", color: "#6a766f", fontWeight: 750 }}>* estimation à partir des sucres simples détaillés disponibles dans CIQUAL.</small> : null}
     </section>
   );
 }
@@ -398,7 +517,7 @@ function SourceNotes({ rows }: { rows: DisplayRow[] }) {
   return (
     <section style={{ margin: "22px 0 6px", color: "#6a766f", fontSize: "0.72rem", lineHeight: 1.45, fontWeight: 700 }}>
       <strong style={{ display: "block", color: "#4d5c54", fontSize: "0.78rem", marginBottom: "0.35rem" }}>Sources et calculs</strong>
-      <p style={{ margin: 0 }}>Valeurs nutritionnelles : CIQUAL / ANSES, exprimées pour la portion sélectionnée. {rows.length} constituants disponibles sur cette fiche.</p>
+      <p style={{ margin: 0 }}>Valeurs nutritionnelles : CIQUAL / ANSES, exprimées pour la portion sélectionnée. {rows.length} constituants disponibles et utilisés pour filtrer les repères utiles.</p>
       {references.length > 0 ? (
         <p style={{ margin: "0.25rem 0 0" }}>Repères : {references.slice(0, 6).join(" ; ")}{references.length > 6 ? " ; …" : ""}.</p>
       ) : null}
@@ -430,9 +549,10 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
 
   const energy = rows.find(isEnergyKcal);
   const ranking = useMemo(() => computeRanking(rows, food), [rows, food]);
-  const snapshot = useMemo(() => buildSnapshot(rows, food, energy), [rows, food, energy]);
+  const snapshot = useMemo(() => buildSnapshot(rows, food, energy, portion), [rows, food, energy, portion]);
+  const recapRows = useMemo(() => consumerRecapRows(rows), [rows]);
   const isFruitVeg = hasFruitVegetableLegumeSignal(food);
-  const highlights = rows
+  const highlights = recapRows
     .filter((row) => typeof row.percent === "number" && !isEnergyKcal(row))
     .sort((a, b) => {
       const aRisk = a.role === "limit" && (a.percent || 0) > 100 ? 1000 : 0;
@@ -508,7 +628,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
         </div>
       </div>
 
-      <DailyRecapTable rows={rows} />
+      <DailyRecapTable rows={recapRows} />
 
       <div className="actionRow">
         <button className="primaryCta addButton" type="button" onClick={addToCumul}>{added ? "Ajouté au cumul" : "Ajouter au cumul"}</button>
@@ -517,19 +637,20 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
       </div>
 
       <section className="nutrientTable nutrientDashboard">
-        <div className="tableHeader"><span>Données CIQUAL complètes</span><span>% repère profil</span></div>
-        {rows.map((nutrient) => {
+        <div className="tableHeader"><span>Détails utiles</span><span>% repère profil</span></div>
+        {recapRows.map((nutrient) => {
           const overflow = overflowLabel(nutrient.percent, nutrient.role);
+          const chip = percentChipStyle(nutrient.percent, nutrient.role);
           return (
-            <div className={`nutrientLine nutrientProgress ${progressTone(nutrient.role, nutrient.percent)}`} key={`${nutrient.key}-${nutrient.label}`}>
+            <div className={`nutrientLine nutrientProgress ${progressTone(nutrient.role, nutrient.percent)}`} key={`${nutrient.key}-${nutrient.displayLabel}`}>
               <div className="nutrientMain">
-                <span>{nutrient.label}</span>
+                <span>{nutrient.displayLabel}{nutrient.isDerived ? "*" : ""}</span>
                 <strong>{amountLabel(nutrient.value, nutrient.unit)}</strong>
-                <small>{referenceText(nutrient.reference)}</small>
+                <small>{nutrient.isDerived ? "Calculé depuis les sucres simples CIQUAL disponibles" : referenceText(nutrient.reference)}</small>
                 {nutrient.sourceColumnName ? <small>CIQUAL : {nutrient.sourceColumnName}</small> : null}
                 {nutrient.reference?.note ? <small>{nutrient.reference.note}</small> : null}
               </div>
-              <em>{percentLabel(nutrient.percent)}{overflow ? <small>{overflow}</small> : null}</em>
+              <em style={{ background: chip.background, border: chip.border, color: chip.color }}>{percentLabel(nutrient.percent)}{overflow ? <small>{overflow}</small> : null}</em>
             </div>
           );
         })}
