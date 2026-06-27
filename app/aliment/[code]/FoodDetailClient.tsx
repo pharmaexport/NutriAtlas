@@ -54,14 +54,32 @@ function ProgressVisual({ nutrient }: { nutrient: DisplayRow }) {
   const percent = nutrient.percent;
   const clampedPercent = Math.min(percent || 0, 100);
   const overflowPercent = Math.max((percent || 0) - 100, 0);
-  const safeCursorPercent = percent === null ? 0 : Math.max(6, Math.min(clampedPercent, 94));
-  const targetShiftPx = overflowPercent > 0 ? Math.min(72, Math.max(18, overflowPercent * 0.9)) : 0;
+  const isExceeded = overflowPercent > 0;
+  const safeCursorPercent = percent === null ? 0 : isExceeded ? 94 : Math.max(6, Math.min(clampedPercent, 94));
+  const targetShiftPx = isExceeded ? 118 : 0;
   const targetLabel = nutrient.reference ? formatAmount(nutrient.reference.target, nutrient.reference.unit) : null;
   const currentLabel = amountLabel(nutrient.value, nutrient.unit);
 
   return (
-    <div className="progressVisual" style={{ position: "relative", paddingTop: "2.65rem", marginTop: "1rem" }}>
-      <div className="progressScale" style={{ position: "absolute", inset: "0 0 auto 0", height: "2.25rem", pointerEvents: "none" }} aria-hidden="true">
+    <div className="progressVisual" style={{ position: "relative", paddingTop: isExceeded ? "3.15rem" : "2.65rem", marginTop: "1rem" }}>
+      <div className="progressScale" style={{ position: "absolute", inset: "0 0 auto 0", height: "2.65rem", pointerEvents: "none" }} aria-hidden="true">
+        {targetLabel ? (
+          <span
+            className="targetValuePill"
+            style={{
+              position: "absolute",
+              right: `${targetShiftPx}px`,
+              top: isExceeded ? "0.1rem" : 0,
+              textAlign: "right",
+              color: isExceeded ? "#7a4a00" : "#31493d",
+              fontWeight: 950,
+              whiteSpace: "nowrap"
+            }}
+          >
+            <small style={{ display: "block", marginBottom: "0.16rem", fontSize: "0.62rem", lineHeight: 1, opacity: 0.82, textTransform: "uppercase", letterSpacing: "0.05em" }}>Seuil 100 %</small>
+            <strong style={{ display: "block", fontSize: "0.86rem", lineHeight: 1 }}>{targetLabel}</strong>
+          </span>
+        ) : null}
         <span
           className="currentValuePill"
           style={{
@@ -69,40 +87,57 @@ function ProgressVisual({ nutrient }: { nutrient: DisplayRow }) {
             left: `${safeCursorPercent}%`,
             top: 0,
             transform: "translateX(-50%)",
-            padding: "0.28rem 0.58rem",
+            padding: isExceeded ? "0.34rem 0.68rem" : "0.28rem 0.58rem",
             borderRadius: "999px",
-            background: "rgba(238, 245, 232, 0.98)",
-            border: "1px solid rgba(16, 35, 27, 0.09)",
-            color: "#10231b",
+            background: isExceeded ? "#fff2d6" : "rgba(238, 245, 232, 0.98)",
+            border: isExceeded ? "2px solid #d18b52" : "1px solid rgba(16, 35, 27, 0.09)",
+            color: isExceeded ? "#4b2800" : "#10231b",
             fontWeight: 950,
             fontSize: "0.82rem",
-            whiteSpace: "nowrap"
+            whiteSpace: "nowrap",
+            boxShadow: isExceeded ? "0 8px 18px rgba(117, 67, 0, 0.12)" : "none"
           }}
         >
+          {isExceeded ? <small style={{ display: "block", marginBottom: "0.12rem", fontSize: "0.58rem", lineHeight: 1, textTransform: "uppercase", letterSpacing: "0.06em", opacity: 0.8 }}>Apport</small> : null}
           {currentLabel}
         </span>
-        {targetLabel ? (
-          <span
-            className="targetValuePill"
-            style={{
-              position: "absolute",
-              right: `${targetShiftPx}px`,
-              top: 0,
-              textAlign: "right",
-              color: "#31493d",
-              fontWeight: 950,
-              whiteSpace: "nowrap"
-            }}
-          >
-            <strong style={{ display: "block", fontSize: "0.86rem", lineHeight: 1 }}>{targetLabel}</strong>
-            <small style={{ display: "block", marginTop: "0.15rem", fontSize: "0.66rem", lineHeight: 1, opacity: 0.75 }}>100 %</small>
-          </span>
-        ) : null}
       </div>
-      <div className="progressTrack" style={{ position: "relative", height: "14px", borderRadius: "999px", background: "rgba(237, 244, 232, 0.95)", border: "1px solid rgba(16, 35, 27, 0.08)", overflow: "hidden" }}>
+      <div
+        className="progressTrack"
+        style={{
+          position: "relative",
+          height: isExceeded ? "18px" : "14px",
+          borderRadius: "999px",
+          background: "rgba(237, 244, 232, 0.95)",
+          border: isExceeded ? "2px solid #d18b52" : "1px solid rgba(16, 35, 27, 0.08)",
+          overflow: "hidden",
+          boxShadow: isExceeded ? "0 0 0 4px rgba(209, 139, 82, 0.14)" : "none"
+        }}
+      >
         <i style={{ position: "absolute", inset: "0 auto 0 0", width: `${clampedPercent}%`, borderRadius: "999px", background: "linear-gradient(90deg, #2e7d3f, #86b65d)" }} />
-        {overflowPercent > 0 ? <b style={{ position: "absolute", inset: "0 0 0 auto", width: `${Math.min(overflowPercent, 100)}%`, borderRadius: "999px", background: "linear-gradient(90deg, #b7c96a, #d18b52)" }} /> : null}
+        {isExceeded ? <b style={{ position: "absolute", inset: "0 0 0 auto", width: "16%", borderRadius: "999px", background: "repeating-linear-gradient(135deg, #d18b52 0 6px, #f0c06b 6px 12px)" }} /> : null}
       </div>
+      {isExceeded ? (
+        <div
+          style={{
+            marginTop: "0.7rem",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.45rem",
+            padding: "0.45rem 0.7rem",
+            borderRadius: "999px",
+            background: "#fff2d6",
+            border: "1px solid #d18b52",
+            color: "#5a3300",
+            fontWeight: 950,
+            fontSize: "0.82rem"
+          }}
+        >
+          <span>Seuil dépassé</span>
+          <strong>{percentLabel(percent)}</strong>
+          <small style={{ fontWeight: 900 }}>{overflowLabel(percent, nutrient.role)}</small>
+        </div>
+      ) : null}
     </div>
   );
 }
