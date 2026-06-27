@@ -1,9 +1,11 @@
 import { FoodDetailClient } from "../../../aliment/[code]/FoodDetailClient";
 import { getFoodByCode, type FullNutrient } from "../../../../lib/nutrition-data";
 
-type PageProps = { params: { code: string } };
+type PageProps = { params: { code: string }; searchParams?: { portion?: string } };
 type Category = "macros" | "glucides" | "lipides" | "mineraux" | "vitamines" | "autres";
 type NutrientRow = { key: string; label: string; unit: string; value: number; sourceColumnName?: string | null; category: Category };
+
+const portionValues = [50, 100, 150, 200, 250, 300];
 
 function normalize(value: string) {
   return value
@@ -73,7 +75,23 @@ function detailRowsFor(food: { nutrients: Record<string, number>; fullNutrients?
   }));
 }
 
-export default function Ciqual2FoodPage({ params }: PageProps) {
+function selectedPortion(raw?: string) {
+  const numeric = Number(raw);
+  return portionValues.includes(numeric) ? numeric : 100;
+}
+
+function portionOptions(selectedGrams: number) {
+  const ordered = [selectedGrams, ...portionValues.filter((grams) => grams !== selectedGrams)];
+  return ordered.map((grams) => ({
+    label: `${grams} g`,
+    grams,
+    description: grams === selectedGrams
+      ? `Portion sélectionnée depuis la recherche CIQUAL 2 : ${grams} g.`
+      : `Portion CIQUAL 2 calculée sur ${grams} g.`
+  }));
+}
+
+export default function Ciqual2FoodPage({ params, searchParams }: PageProps) {
   const food = getFoodByCode(params.code);
 
   if (!food) {
@@ -95,6 +113,8 @@ export default function Ciqual2FoodPage({ params }: PageProps) {
     );
   }
 
+  const grams = selectedPortion(searchParams?.portion);
+
   return (
     <main>
       <nav className="nav">
@@ -109,7 +129,7 @@ export default function Ciqual2FoodPage({ params }: PageProps) {
 
       <FoodDetailClient
         food={{ code: food.code, name: food.name, group: `CIQUAL 2 · ${food.group}`, subgroup: food.subgroup || null }}
-        portions={[{ label: "100 g", grams: 100, description: "Fiche complète CIQUAL 2 sur base 100 g." }]}
+        portions={portionOptions(grams)}
         nutrients={detailRowsFor(food)}
       />
     </main>
