@@ -136,7 +136,7 @@ export default function LongevityPage() {
           <div className="formGrid">
             <label className="field"><span>Tension systolique</span><input type="number" min="70" max="240" value={questionnaire.systolic ?? ""} onChange={(event) => updateNumber("systolic", event.currentTarget.value)} /><small>optionnel</small></label>
             <label className="field"><span>Tension diastolique</span><input type="number" min="40" max="140" value={questionnaire.diastolic ?? ""} onChange={(event) => updateNumber("diastolic", event.currentTarget.value)} /><small>optionnel</small></label>
-            <label className="field"><span>Fréquence repos</span><input type="number" min="35" max="130" value={questionnaire.restingHeartRate ?? ""} onChange={(event) => updateNumber("restingHeartRate", event.currentTarget.value)} /><small>bpm, optionnel</small></label>
+            <label className="field"><span>Fréquence repos</span><input inputMode="numeric" type="text" value={questionnaire.restingHeartRate ?? ""} onChange={(event) => updateNumber("restingHeartRate", event.currentTarget.value)} /><small>bpm, optionnel</small></label>
           </div>
 
           <button className="primaryCta" type="submit">{saved ? "Questionnaire enregistré" : "Sauvegarder et recalculer"}</button>
