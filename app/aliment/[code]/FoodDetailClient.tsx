@@ -130,14 +130,21 @@ function hasFruitVegetableLegumeSignal(food: Props["food"]) {
 }
 
 function computeRanking(rows: DisplayRow[], food: Props["food"]): RankingEstimate | null {
-  const energyKcal = rowValue(rows, ["energy_kcal"]);
+  const fruitVegetableLegume = hasFruitVegetableLegumeSignal(food);
+  const protein = rowValue(rows, ["protein_g"], ["proteines"]);
+  const carbs = rowValue(rows, ["carbs_g"], ["glucides"]);
+  const fat = rowValue(rows, ["fat_g"], ["lipides"]);
+  const computedEnergyKcal = protein !== null && carbs !== null && fat !== null ? protein * 4 + carbs * 4 + fat * 9 : null;
+  const energyKcal = rowValue(rows, ["energy_kcal"]) ?? computedEnergyKcal;
   const energyKj = rowValue(rows, ["energy_kj"]) ?? (energyKcal !== null ? energyKcal * 4.184 : null);
   const saturatedFat = rowValue(rows, ["saturated_fat_g"], ["acides gras satures", "ag satures", "saturated fat"]);
   const sugars = rowValue(rows, ["sugars_g"], ["sucres"]);
   const sodiumMg = rowValue(rows, ["sodium_mg"], ["sodium"]);
   const salt = rowValue(rows, ["salt_g"], ["sel chlorure de sodium"]) ?? (sodiumMg !== null ? (sodiumMg * 2.5) / 1000 : null);
 
-  if (energyKj === null || saturatedFat === null || sugars === null || salt === null) return null;
+  if (energyKj === null || saturatedFat === null || sugars === null || salt === null) {
+    return fruitVegetableLegume ? { grade: "A", confidence: "faible" } : null;
+  }
 
   const unfavorable =
     thresholdCount(energyKj, ENERGY_THRESHOLDS_KJ) +
@@ -146,15 +153,14 @@ function computeRanking(rows: DisplayRow[], food: Props["food"]): RankingEstimat
     thresholdCount(salt, SALT_THRESHOLDS_G);
 
   const fiber = rowValue(rows, ["fiber_g"], ["fibres alimentaires"]) ?? 0;
-  const protein = rowValue(rows, ["protein_g"], ["proteines"]) ?? 0;
-  const fruitVegetableLegume = hasFruitVegetableLegumeSignal(food) ? 5 : 0;
+  const safeProtein = protein ?? 0;
   const favorable = unfavorable < 11
-    ? fruitVegetableLegume + thresholdCount(fiber, FIBER_THRESHOLDS_G) + thresholdCount(protein, PROTEIN_THRESHOLDS_G)
-    : fruitVegetableLegume + thresholdCount(fiber, FIBER_THRESHOLDS_G);
+    ? 5 + thresholdCount(fiber, FIBER_THRESHOLDS_G) + thresholdCount(safeProtein, PROTEIN_THRESHOLDS_G)
+    : 5 + thresholdCount(fiber, FIBER_THRESHOLDS_G);
 
   return {
     grade: gradeFromTotal(unfavorable - favorable),
-    confidence: fruitVegetableLegume > 0 ? "moyenne" : "faible"
+    confidence: fruitVegetableLegume ? "moyenne" : "faible"
   };
 }
 
@@ -213,13 +219,29 @@ function RankingBadge({ ranking }: { ranking: RankingEstimate | null }) {
   );
 }
 
+function highlightPillStyle(item: DisplayRow) {
+  const exceeded = (item.percent || 0) > 100;
+  const isLimit = item.role === "limit";
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "0.55rem 0.8rem",
+    borderRadius: "999px",
+    background: exceeded && isLimit ? "#fff2d6" : "#eef5e8",
+    border: exceeded && isLimit ? "1px solid #d18b52" : "1px solid rgba(16, 35, 27, 0.08)",
+    color: exceeded && isLimit ? "#5a3300" : "#24552f",
+    fontWeight: 950,
+    whiteSpace: "nowrap" as const
+  };
+}
+
 function HighlightCard({ highlights }: { highlights: DisplayRow[] }) {
   if (highlights.length === 0) return null;
 
   return (
     <section className="highlightCard" style={{ margin: "0 0 18px" }}>
       <span>Contributions principales</span>
-      <div>{highlights.map((item) => <strong className={progressTone(item.role, item.percent)} key={`${item.key}-${item.label}`}>{item.label} · {percentLabel(item.percent)}</strong>)}</div>
+      <div>{highlights.map((item) => <strong style={highlightPillStyle(item)} key={`${item.key}-${item.label}`}>{item.label} · {percentLabel(item.percent)}</strong>)}</div>
     </section>
   );
 }
