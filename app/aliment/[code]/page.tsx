@@ -86,6 +86,15 @@ function labelFor(key: string, fallback?: string | null) {
     .join(" ");
 }
 
+function hasSaturatedSignal(text: string) {
+  return (text.includes("sature") || text.includes("saturated")) &&
+    !text.includes("insature") &&
+    !text.includes("unsaturated") &&
+    !text.includes("mono") &&
+    !text.includes("poly") &&
+    !text.includes("trans");
+}
+
 function canonicalKey(nutrient: FullNutrient) {
   const text = normalizeText([nutrient.key, nutrient.label, nutrient.sourceColumnName || ""].join(" "));
   const unit = nutrient.unit.toLowerCase();
@@ -95,7 +104,7 @@ function canonicalKey(nutrient: FullNutrient) {
   if (unit === "g" && text.includes("proteine")) return "protein_g";
   if (unit === "g" && text.includes("glucide")) return "carbs_g";
   if (unit === "g" && text.includes("lipide")) return "fat_g";
-  if (unit === "g" && text.includes("sature") && !text.includes("mono") && !text.includes("poly") && !text.includes("trans")) return "saturated_fat_g";
+  if (unit === "g" && hasSaturatedSignal(text)) return "saturated_fat_g";
   if (unit === "g" && text.includes("sucre")) return "sugars_g";
   if (unit === "g" && text.includes("fibre")) return "fiber_g";
   if (unit === "g" && text.includes("sel")) return "salt_g";
@@ -127,7 +136,7 @@ function roleFor(key: string, label = ""): NutrientRole {
     text.includes("salt") ||
     text.includes("sel") ||
     text.includes("sodium") ||
-    text.includes("sature") ||
+    hasSaturatedSignal(text) ||
     text.includes("trans") ||
     text.includes("cholesterol")
   ) return "limit";
@@ -160,7 +169,7 @@ function sortScore(item: Pick<NutrientRow, "key" | "label" | "unit">) {
   if (item.key === "energy_kcal") return 0;
   if (item.key === "energy_kj") return 1;
   if (text.includes("proteine") || text.includes("protein") || text.includes("glucide") || text.includes("carb") || text.includes("lipide") || text.includes("fat") || text.includes("sucre") || text.includes("sugar") || text.includes("fibre") || text.includes("fiber") || text.includes("sel") || text.includes("salt")) return 10;
-  if (text.includes("omega") || text.includes("epa") || text.includes("dha") || text.includes("linole") || text.includes("oleique") || text.includes("sature")) return 20;
+  if (text.includes("omega") || text.includes("epa") || text.includes("dha") || text.includes("linole") || text.includes("oleique") || hasSaturatedSignal(text)) return 20;
   if (text.includes("calcium") || text.includes("fer") || text.includes("iron") || text.includes("magnesium") || text.includes("potassium") || text.includes("sodium") || text.includes("zinc") || text.includes("selenium") || text.includes("iode")) return 30;
   if (text.includes("vitamin") || text.includes("vitamine") || text.includes("retinol") || text.includes("carotene") || text.includes("folate")) return 40;
   return 50;
