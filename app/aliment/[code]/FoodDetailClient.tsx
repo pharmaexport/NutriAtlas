@@ -16,12 +16,13 @@ import {
   type NutrientRole,
   type UserProfile
 } from "../../../lib/nutrition-profile";
+import type { NutriScoreEstimate } from "../../../lib/nutriscore";
 
 const STORAGE_KEY = "nutriatlas-cumul-v1";
 
 type NutrientItem = { key: string; label: string; unit: string; per100g: number; target?: number; role?: NutrientRole; sourceColumnName?: string | null; };
 type PortionOption = { label: string; grams: number; description: string; };
-type Props = { food: { code: string; name: string; group: string; subgroup?: string | null; }; portions: PortionOption[]; nutrients: NutrientItem[]; };
+type Props = { food: { code: string; name: string; group: string; subgroup?: string | null; }; portions: PortionOption[]; nutrients: NutrientItem[]; nutriScore: NutriScoreEstimate | null; };
 type CumulItem = { id: string; foodCode: string; foodName: string; portionLabel: string; grams: number; nutrients: Array<{ key: string; label: string; unit: string; value: number; target?: number; }>; createdAt: string; };
 type DisplayRow = NutrientItem & { value: number; percent: number | null; reference: NutrientReference | null; role: NutrientRole; };
 
@@ -251,6 +252,22 @@ function DailyRecapTable({ rows }: { rows: DisplayRow[] }) {
   );
 }
 
+function NutriScorePictogram({ nutriScore }: { nutriScore: NutriScoreEstimate | null }) {
+  const grade = nutriScore?.grade || "unknown";
+  const ariaLabel = nutriScore
+    ? `${nutriScore.label}, score numérique ${nutriScore.score}, confiance ${nutriScore.confidence}`
+    : "Nutri-Score estimé indisponible";
+
+  return (
+    <aside className="nutriScorePictogram" data-grade={grade} aria-label={ariaLabel}>
+      <span>Nutri-Score</span>
+      <strong>{nutriScore?.grade || "–"}</strong>
+      <small>{nutriScore ? `score ${nutriScore.score}` : "non calculé"}</small>
+      <em>{nutriScore ? nutriScore.confidence : "données incomplètes"}</em>
+    </aside>
+  );
+}
+
 function SourceNotes({ rows }: { rows: DisplayRow[] }) {
   const references = Array.from(new Set(rows
     .map((row) => row.reference ? `${row.reference.source} — ${row.reference.basis}` : null)
@@ -267,7 +284,7 @@ function SourceNotes({ rows }: { rows: DisplayRow[] }) {
   );
 }
 
-export function FoodDetailClient({ food, portions, nutrients }: Props) {
+export function FoodDetailClient({ food, portions, nutrients, nutriScore }: Props) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [added, setAdded] = useState(false);
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
@@ -324,6 +341,7 @@ export function FoodDetailClient({ food, portions, nutrients }: Props) {
           <h1>{food.name}</h1>
           <p>{food.group}{food.subgroup ? ` – ${food.subgroup}` : ""}</p>
         </div>
+        <NutriScorePictogram nutriScore={nutriScore} />
       </div>
 
       <div className="portionControlCard">
