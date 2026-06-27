@@ -1,17 +1,9 @@
+import { FoodDetailClient } from "../../../aliment/[code]/FoodDetailClient";
 import { getFoodByCode, type FullNutrient } from "../../../../lib/nutrition-data";
 
 type PageProps = { params: { code: string } };
 type Category = "macros" | "glucides" | "lipides" | "mineraux" | "vitamines" | "autres";
 type NutrientRow = { key: string; label: string; unit: string; value: number; sourceColumnName?: string | null; category: Category };
-
-const categoryLabels: Record<Category, string> = {
-  macros: "Macros et énergie",
-  glucides: "Glucides",
-  lipides: "Lipides",
-  mineraux: "Minéraux",
-  vitamines: "Vitamines",
-  autres: "Autres constituants"
-};
 
 function normalize(value: string) {
   return value
@@ -72,8 +64,13 @@ function rowsFor(food: { nutrients: Record<string, number>; fullNutrients?: Full
   return rows.sort((a, b) => a.category.localeCompare(b.category, "fr") || a.label.localeCompare(b.label, "fr"));
 }
 
-function formatValue(value: number) {
-  return Math.round(value * 1000) / 1000;
+function detailRowsFor(food: { nutrients: Record<string, number>; fullNutrients?: FullNutrient[] }) {
+  return rowsFor(food).map((row) => ({
+    key: row.key,
+    label: row.label,
+    unit: row.unit,
+    per100g: row.value
+  }));
 }
 
 export default function Ciqual2FoodPage({ params }: PageProps) {
@@ -98,12 +95,6 @@ export default function Ciqual2FoodPage({ params }: PageProps) {
     );
   }
 
-  const rows = rowsFor(food);
-  const grouped = rows.reduce<Record<Category, NutrientRow[]>>((acc, row) => {
-    acc[row.category].push(row);
-    return acc;
-  }, { macros: [], glucides: [], lipides: [], mineraux: [], vitamines: [], autres: [] });
-
   return (
     <main>
       <nav className="nav">
@@ -116,43 +107,11 @@ export default function Ciqual2FoodPage({ params }: PageProps) {
         </div>
       </nav>
 
-      <section className="foodPage pageSection">
-        <div className="foodHeroCard foodHeroPremium">
-          <div className="foodTitleBlock">
-            <p className="eyebrow">CIQUAL 2 · aliment {food.code}</p>
-            <h1>{food.name}</h1>
-            <p>{food.group}{food.subgroup ? ` – ${food.subgroup}` : ""}</p>
-          </div>
-        </div>
-
-        <div className="portionSummary">
-          <div><span>Base</span><strong>100 g</strong><small>référence CIQUAL</small></div>
-          <div><span>Données disponibles</span><strong>{rows.length}</strong><small>constituants exportés</small></div>
-        </div>
-
-        <div className="actionRow">
-          <a className="secondaryCta" href="/ciqual2">Nouvelle recherche CIQUAL 2</a>
-          <a className="secondaryCta" href={`/aliment/${food.code}`}>Fiche CIQUAL classique</a>
-        </div>
-
-        {Object.entries(grouped).map(([category, items]) => items.length > 0 ? (
-          <section className="nutrientTable nutrientDashboard" key={category}>
-            <div className="tableHeader">
-              <span>{categoryLabels[category as Category]}</span>
-              <span>{items.length} constituants</span>
-            </div>
-            {items.map((nutrient) => (
-              <div className="nutrientLine nutrientProgress toneUnknown" key={`${nutrient.key}-${nutrient.sourceColumnName || ""}`}>
-                <div className="nutrientMain">
-                  <span>{nutrient.label}</span>
-                  {nutrient.sourceColumnName ? <small>CIQUAL : {nutrient.sourceColumnName}</small> : null}
-                </div>
-                <strong>{formatValue(nutrient.value)} {nutrient.unit}</strong>
-              </div>
-            ))}
-          </section>
-        ) : null)}
-      </section>
+      <FoodDetailClient
+        food={{ code: food.code, name: food.name, group: `CIQUAL 2 · ${food.group}`, subgroup: food.subgroup || null }}
+        portions={[{ label: "100 g", grams: 100, description: "Fiche complète CIQUAL 2 sur base 100 g." }]}
+        nutrients={detailRowsFor(food)}
+      />
     </main>
   );
 }
