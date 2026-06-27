@@ -2,6 +2,15 @@ import ciqualIndex from "../.generated/ciqual-search-index.json";
 
 export type NutrientKey = string;
 
+export type FullNutrient = {
+  id?: number;
+  key: string;
+  label: string;
+  unit: string;
+  value: number;
+  sourceColumnName?: string | null;
+};
+
 export type Food = {
   code: string;
   name: string;
@@ -11,6 +20,7 @@ export type Food = {
   subsubgroup?: string | null;
   aliases?: string[];
   nutrients: Record<string, number>;
+  fullNutrients?: FullNutrient[];
 };
 
 type CiqualIndex = {
@@ -19,6 +29,8 @@ type CiqualIndex = {
     publisher: string;
     version: string;
     foodCount: number;
+    nutrientCount?: number;
+    summaryNutrientCount?: number;
     generatedFrom: string;
   };
   foods: Food[];
