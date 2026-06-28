@@ -56,14 +56,14 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
 
   if (equivalent < 150) {
     recommendations.push({
-      title: "Augmenter le socle cardio",
+      title: "Socle cardio",
       body: "Vise progressivement 150 minutes d’activité modérée par semaine, ou 75 minutes intenses. Les minutes intenses comptent double dans ce suivi.",
       source: "OMS / NHS",
       gain: computableGain(6, 15, 30, "modérée")
     });
   } else {
     recommendations.push({
-      title: "Cardio : socle atteint",
+      title: "Cardio OK",
       body: `Tu déclares environ ${equivalent} minutes équivalentes modérées par semaine. Le prochain levier est la régularité et la réduction du temps assis.`,
       source: "OMS / NHS",
       gain: computableGain(1, 4, 8, "faible")
@@ -72,7 +72,7 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
 
   if ((q.strengthSessions || 0) < 2) {
     recommendations.push({
-      title: "Ajouter du renforcement musculaire",
+      title: "Renforcement",
       body: "Ajoute 2 séances de renforcement par semaine : jambes, dos, poussée, tirage et gainage. C’est important pour la masse musculaire, le métabolisme et le vieillissement fonctionnel.",
       source: "ANSES / NHS",
       gain: computableGain(6, 12, 20, "modérée")
@@ -81,7 +81,7 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
 
   if ((q.mobilitySessions || 0) < 2) {
     recommendations.push({
-      title: "Mobilité et assouplissement",
+      title: "Mobilité",
       body: "Ajoute 2 à 3 moments de mobilité, équilibre ou assouplissement par semaine : yoga, pilates, étirements actifs ou travail d’amplitude.",
       source: "ANSES",
       gain: nonComputableGain("Impact fonctionnel probable ; effet longévité direct difficile à isoler.")
@@ -90,7 +90,7 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
 
   if ((q.sittingHours || 0) > 8) {
     recommendations.push({
-      title: "Réduire la sédentarité",
+      title: "Moins assis",
       body: "Au-dessus de 8 heures assis par jour, ajoute des pauses actives : 2 à 5 minutes de marche ou mobilité toutes les 60 à 90 minutes.",
       source: "ANSES / OMS",
       gain: computableGain(4, 10, 18, "modérée")
@@ -99,7 +99,7 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
 
   if ((q.fruitVegServingsPerDay || 0) < 5) {
     recommendations.push({
-      title: "Fruits et légumes",
+      title: "Fruits légumes",
       body: "Augmente progressivement vers 5 portions par jour, en priorité légumes, fruits entiers, légumineuses et aliments peu transformés.",
       source: "OMS",
       gain: computableGain(6, 14, 28, "modérée")
@@ -117,7 +117,7 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
 
   if (q.ultraProcessed === "frequent" || q.ultraProcessed === "daily") {
     recommendations.push({
-      title: "Réduire les ultra-transformés",
+      title: "Ultra-transformés",
       body: "Remplace une prise ultra-transformée par jour par une option simple : fruit + oléagineux, yaourt nature, légumineuses, œufs, poisson, céréales complètes ou légumes.",
       source: "OMS",
       gain: computableGain(4, 9, 18, "faible")
@@ -125,7 +125,7 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
   }
 
   recommendations.push({
-    title: "Repères nutritionnels actifs",
+    title: "Repères actifs",
     body: `Ton profil calcule environ ${summary.calories} kcal/j, avec des repères personnalisés pour protéines, glucides, lipides, sucres, fibres, sodium, potassium et magnésium.`,
     source: "ANSES / profil NutriAtlas",
     gain: nonComputableGain("Repère de pilotage nutritionnel ; gain isolé non robuste.")
@@ -159,12 +159,12 @@ export default function RecoPage() {
         </div>
       </nav>
 
-      <section className="profileHero pageSection">
+      <section className="profileHero pageSection recoHero">
         <div className="profileIntro">
           <p className="eyebrow">Reco profil</p>
-          <h1>Recommandations personnalisées, sourcées et actionnables.</h1>
+          <h1>Reco profil</h1>
           <p>
-            Cette page transforme le profil, le questionnaire longévité et les repères nutritionnels en priorités concrètes inspirées des recommandations ANSES, OMS et NHS.
+            Priorités concrètes issues du profil, du questionnaire longévité et des repères ANSES, OMS et NHS.
           </p>
           <div className="ctaRow">
             <a className="primaryCta" href="/longevite">Remplir longévité</a>
@@ -175,8 +175,8 @@ export default function RecoPage() {
         <aside className="profilePanel">
           <p className="eyebrow">Synthèse</p>
           <div className="metricGrid">
-            <div><span>Âge bio estimé</span><strong className="metricAge">{longevity.biologicalAgeLabel}</strong><small>estimation statistique</small></div>
-            <div><span>Score longévité</span><strong>{longevity.score}</strong><small>indice global / 100</small></div>
+            <div><span>Âge bio</span><strong className="metricAge">{longevity.biologicalAgeLabel}</strong><small>estimation</small></div>
+            <div><span>Score</span><strong>{longevity.score}</strong><small>indice / 100</small></div>
             <div><span>Activité</span><strong>{activityEquivalent(questionnaire)}</strong><small>min équiv. / semaine</small></div>
           </div>
         </aside>
@@ -185,7 +185,7 @@ export default function RecoPage() {
       <section className="pageSection profileFormPreview">
         <div className="referencePreview">
           <p className="eyebrow">Priorités</p>
-          <h2>À faire selon ton profil.</h2>
+          <h2>Priorités profil</h2>
           <div className="referenceList">
             {recommendations.map((item) => (
               <article key={item.title}>
