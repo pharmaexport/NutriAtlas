@@ -22,6 +22,11 @@
 }
 
 @media (max-width: 760px) {
+  .nav { overflow-x: auto; justify-content: flex-start; gap: 16px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav .brand,
+  .navLinks { flex: 0 0 auto; }
+  .navLinks a { white-space: nowrap; }
   .recoHero { padding-top: 28px; }
   .recoHero .profileIntro,
   .recoHero .profilePanel,
