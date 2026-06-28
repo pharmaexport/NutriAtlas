@@ -12,6 +12,7 @@
 .metricGrid div:nth-child(2n) { border-left: 1px solid rgba(16, 35, 27, 0.08); }
 .metricGrid div:nth-child(n+3) { border-top: 1px solid rgba(16, 35, 27, 0.08); }
 .metricAge { font-size: clamp(1.35rem, 2.8vw, 2.25rem) !important; letter-spacing: -0.055em; }
+.recommendationSource { margin: 6px 0 4px !important; color: #4f7e3f !important; font-size: clamp(.88rem, 1.6vw, 1.05rem) !important; line-height: 1.15 !important; letter-spacing: .08em !important; text-transform: uppercase; }
 .gainPill { display: inline-flex !important; width: fit-content; margin: 12px 0 6px !important; padding: 8px 11px; border-radius: 999px; background: #edf4e8; color: #315530 !important; font-weight: 950 !important; }
 .gainNote { margin-top: 7px !important; color: #6b766f !important; }
 
