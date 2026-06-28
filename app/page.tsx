@@ -16,6 +16,8 @@ export default function HomePage() {
           <h1>NutriAtlas</h1>
           <div className="ctaRow">
             <a className="primaryCta" href="/ciqual2">Accès base</a>
+            <a className="secondaryCta" href="/longevite">Longévité</a>
+            <a className="secondaryCta" href="/reco">Reco</a>
           </div>
         </div>
       </section>
