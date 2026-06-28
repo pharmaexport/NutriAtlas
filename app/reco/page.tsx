@@ -191,10 +191,9 @@ export default function RecoPage() {
             {recommendations.map((item) => (
               <article key={item.title}>
                 <span>{item.title}</span>
-                <strong>{item.source}</strong>
+                <strong className="recommendationSource">{item.source}</strong>
                 <small className="gainPill">{gainLabel(item.gain)}</small>
                 <small>{item.body}</small>
-                <small className="gainNote">Confiance : {item.gain.confidence}. {item.gain.note}</small>
               </article>
             ))}
           </div>
