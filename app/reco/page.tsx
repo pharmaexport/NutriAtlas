@@ -177,7 +177,6 @@ export default function RecoPage() {
           <div className="metricGrid">
             <div><span>Âge bio estimé</span><strong className="metricAge">{longevity.biologicalAgeLabel}</strong><small>estimation statistique</small></div>
             <div><span>Score longévité</span><strong>{longevity.score}</strong><small>indice global / 100</small></div>
-            <div><span>Confiance</span><strong className="metricText">{longevity.confidence}</strong><small>questionnaire</small></div>
             <div><span>Activité</span><strong>{activityEquivalent(questionnaire)}</strong><small>min équiv. / semaine</small></div>
           </div>
         </aside>
@@ -191,10 +190,9 @@ export default function RecoPage() {
             {recommendations.map((item) => (
               <article key={item.title}>
                 <span>{item.title}</span>
-                <strong>{item.source}</strong>
+                <strong className="recommendationSource">{item.source}</strong>
                 <small className="gainPill">{gainLabel(item.gain)}</small>
                 <small>{item.body}</small>
-                <small className="gainNote">Confiance : {item.gain.confidence}. {item.gain.note}</small>
               </article>
             ))}
           </div>
