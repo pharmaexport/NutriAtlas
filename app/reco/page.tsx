@@ -4,26 +4,69 @@ import { useEffect, useMemo, useState } from "react";
 import { defaultProfile, loadStoredProfile, summarizeProfile, type UserProfile } from "../../lib/nutrition-profile";
 import { calculateLongevityAge, defaultLongevityQuestionnaire, loadLongevityQuestionnaire, type LongevityQuestionnaire } from "../../lib/longevity";
 
+type LongevityGainEstimate = {
+  medianMonths: number | null;
+  lowMonths?: number;
+  highMonths?: number;
+  confidence: "forte" | "modérée" | "faible";
+  note: string;
+};
+
+type Recommendation = {
+  title: string;
+  body: string;
+  source: string;
+  gain: LongevityGainEstimate;
+};
+
 function activityEquivalent(q: LongevityQuestionnaire) {
   return (q.moderateMinutes || 0) + (q.vigorousMinutes || 0) * 2;
+}
+
+function computableGain(lowMonths: number, medianMonths: number, highMonths: number, confidence: LongevityGainEstimate["confidence"]): LongevityGainEstimate {
+  return {
+    lowMonths,
+    medianMonths,
+    highMonths,
+    confidence,
+    note: "Estimation statistique si l’habitude est maintenue dans la durée."
+  };
+}
+
+function nonComputableGain(reason: string): LongevityGainEstimate {
+  return {
+    medianMonths: null,
+    confidence: "faible",
+    note: reason
+  };
+}
+
+function gainLabel(gain: LongevityGainEstimate) {
+  if (gain.medianMonths === null) return "Gain longévité non chiffrable";
+  if (gain.lowMonths !== undefined && gain.highMonths !== undefined && gain.lowMonths !== gain.highMonths) {
+    return `Gain longévité estimé : +${gain.lowMonths} à +${gain.highMonths} mois`;
+  }
+  return `Gain longévité estimé : +${gain.medianMonths} mois`;
 }
 
 function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
   const summary = summarizeProfile(profile);
   const equivalent = activityEquivalent(q);
-  const recommendations: Array<{ title: string; body: string; source: string }> = [];
+  const recommendations: Recommendation[] = [];
 
   if (equivalent < 150) {
     recommendations.push({
       title: "Augmenter le socle cardio",
       body: "Vise progressivement 150 minutes d’activité modérée par semaine, ou 75 minutes intenses. Les minutes intenses comptent double dans ce suivi.",
-      source: "OMS / NHS"
+      source: "OMS / NHS",
+      gain: computableGain(6, 15, 30, "modérée")
     });
   } else {
     recommendations.push({
       title: "Cardio : socle atteint",
       body: `Tu déclares environ ${equivalent} minutes équivalentes modérées par semaine. Le prochain levier est la régularité et la réduction du temps assis.`,
-      source: "OMS / NHS"
+      source: "OMS / NHS",
+      gain: computableGain(1, 4, 8, "faible")
     });
   }
 
@@ -31,7 +74,8 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
     recommendations.push({
       title: "Ajouter du renforcement musculaire",
       body: "Ajoute 2 séances de renforcement par semaine : jambes, dos, poussée, tirage et gainage. C’est important pour la masse musculaire, le métabolisme et le vieillissement fonctionnel.",
-      source: "ANSES / NHS"
+      source: "ANSES / NHS",
+      gain: computableGain(6, 12, 20, "modérée")
     });
   }
 
@@ -39,7 +83,8 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
     recommendations.push({
       title: "Mobilité et assouplissement",
       body: "Ajoute 2 à 3 moments de mobilité, équilibre ou assouplissement par semaine : yoga, pilates, étirements actifs ou travail d’amplitude.",
-      source: "ANSES"
+      source: "ANSES",
+      gain: nonComputableGain("Impact fonctionnel probable ; effet longévité direct difficile à isoler.")
     });
   }
 
@@ -47,7 +92,8 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
     recommendations.push({
       title: "Réduire la sédentarité",
       body: "Au-dessus de 8 heures assis par jour, ajoute des pauses actives : 2 à 5 minutes de marche ou mobilité toutes les 60 à 90 minutes.",
-      source: "ANSES / OMS"
+      source: "ANSES / OMS",
+      gain: computableGain(4, 10, 18, "modérée")
     });
   }
 
@@ -55,7 +101,8 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
     recommendations.push({
       title: "Fruits et légumes",
       body: "Augmente progressivement vers 5 portions par jour, en priorité légumes, fruits entiers, légumineuses et aliments peu transformés.",
-      source: "OMS"
+      source: "OMS",
+      gain: computableGain(6, 14, 28, "modérée")
     });
   }
 
@@ -63,7 +110,8 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
     recommendations.push({
       title: "Légumineuses",
       body: "Ajoute lentilles, pois chiches, haricots ou pois cassés 2 à 3 fois par semaine pour les fibres, les protéines végétales et la satiété.",
-      source: "OMS / PNNS"
+      source: "OMS / PNNS",
+      gain: computableGain(3, 6, 12, "faible")
     });
   }
 
@@ -71,17 +119,19 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
     recommendations.push({
       title: "Réduire les ultra-transformés",
       body: "Remplace une prise ultra-transformée par jour par une option simple : fruit + oléagineux, yaourt nature, légumineuses, œufs, poisson, céréales complètes ou légumes.",
-      source: "OMS"
+      source: "OMS",
+      gain: computableGain(4, 9, 18, "faible")
     });
   }
 
   recommendations.push({
     title: "Repères nutritionnels actifs",
     body: `Ton profil calcule environ ${summary.calories} kcal/j, avec des repères personnalisés pour protéines, glucides, lipides, sucres, fibres, sodium, potassium et magnésium.`,
-    source: "ANSES / profil NutriAtlas"
+    source: "ANSES / profil NutriAtlas",
+    gain: nonComputableGain("Repère de pilotage nutritionnel ; gain isolé non robuste.")
   });
 
-  return recommendations;
+  return recommendations.sort((a, b) => (b.gain.medianMonths ?? -1) - (a.gain.medianMonths ?? -1));
 }
 
 export default function RecoPage() {
@@ -125,8 +175,8 @@ export default function RecoPage() {
         <aside className="profilePanel">
           <p className="eyebrow">Synthèse</p>
           <div className="metricGrid">
-            <div><span>Âge bio estimé</span><strong>{longevity.biologicalAge}</strong><small>ans</small></div>
-            <div><span>Score longévité</span><strong>{longevity.score}</strong><small>/ 100</small></div>
+            <div><span>Âge bio estimé</span><strong className="metricAge">{longevity.biologicalAgeLabel}</strong><small>estimation statistique</small></div>
+            <div><span>Score longévité</span><strong>{longevity.score}</strong><small>indice global / 100</small></div>
             <div><span>Confiance</span><strong className="metricText">{longevity.confidence}</strong><small>questionnaire</small></div>
             <div><span>Activité</span><strong>{activityEquivalent(questionnaire)}</strong><small>min équiv. / semaine</small></div>
           </div>
@@ -142,13 +192,16 @@ export default function RecoPage() {
               <article key={item.title}>
                 <span>{item.title}</span>
                 <strong>{item.source}</strong>
+                <small className="gainPill">{gainLabel(item.gain)}</small>
                 <small>{item.body}</small>
+                <small className="gainNote">Confiance : {item.gain.confidence}. {item.gain.note}</small>
               </article>
             ))}
           </div>
           <div className="sourceNote">
             <strong>Sources officielles</strong>
             <p><small>ANSES : activité cardiorespiratoire, renforcement musculaire, assouplissement et sédentarité. OMS : activité physique, alimentation saine, sucres, sel et graisses. NHS : repères pratiques d’activité modérée, intense, renforcement et réduction du temps assis.</small></p>
+            <p><small>Les gains affichés sont des ordres de grandeur populationnels. Ils ne constituent pas une promesse individuelle et ne s’additionnent pas toujours directement.</small></p>
           </div>
         </div>
       </section>

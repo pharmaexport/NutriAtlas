@@ -44,6 +44,8 @@ export type LongevityComponent = {
 export type LongevityResult = {
   chronologicalAge: number;
   biologicalAge: number;
+  biologicalAgeMonths: number;
+  biologicalAgeLabel: string;
   deltaYears: number;
   score: number;
   confidence: "faible" | "moyenne" | "bonne";
@@ -326,12 +328,41 @@ function deltaFromScore(score: number) {
   return 7;
 }
 
+function deltaMonthsFromScore(score: number) {
+  const anchors = [
+    { score: 100, deltaMonths: -72 },
+    { score: 90, deltaMonths: -72 },
+    { score: 80, deltaMonths: -48 },
+    { score: 70, deltaMonths: -24 },
+    { score: 60, deltaMonths: 0 },
+    { score: 50, deltaMonths: 24 },
+    { score: 40, deltaMonths: 48 },
+    { score: 0, deltaMonths: 84 }
+  ];
+
+  for (let index = 1; index < anchors.length; index += 1) {
+    const high = anchors[index - 1];
+    const low = anchors[index];
+    if (score >= low.score) {
+      const span = high.score - low.score || 1;
+      const ratio = (score - low.score) / span;
+      return Math.round(low.deltaMonths + (high.deltaMonths - low.deltaMonths) * ratio);
+    }
+  }
+
+  return 84;
+}
+
 function confidence(q: LongevityQuestionnaire) {
   const optionalFilled = [q.systolic, q.diastolic, q.restingHeartRate].filter((value) => value !== null).length;
   const activityFilled = q.moderateMinutes !== null || q.vigorousMinutes !== null;
   if (optionalFilled >= 3 && activityFilled) return "bonne";
   if (activityFilled) return "moyenne";
   return "faible";
+}
+
+export function formatAgeWithMonths(years: number, months: number) {
+  return `${years} ans, ${months} mois`;
 }
 
 export function calculateLongevityAge(profileInput: Partial<UserProfile>, questionnaireInput?: Partial<LongevityQuestionnaire> | null): LongevityResult {
@@ -349,6 +380,10 @@ export function calculateLongevityAge(profileInput: Partial<UserProfile>, questi
   ];
   const baseScore = components.reduce((sum, item) => sum + item.score, 0);
   const score = clamp(Math.round(baseScore + scoreStress(q) * 0.6), 0, 100);
+  const deltaMonths = deltaMonthsFromScore(score);
+  const totalBiologicalMonths = Math.round(clamp(profile.age * 12 + deltaMonths, 18 * 12, 100 * 12));
+  const biologicalAge = Math.floor(totalBiologicalMonths / 12);
+  const biologicalAgeMonths = totalBiologicalMonths % 12;
   const deltaYears = deltaFromScore(score);
 
   const favorable: string[] = [];
@@ -364,7 +399,9 @@ export function calculateLongevityAge(profileInput: Partial<UserProfile>, questi
 
   return {
     chronologicalAge: profile.age,
-    biologicalAge: clamp(profile.age + deltaYears, 18, 100),
+    biologicalAge,
+    biologicalAgeMonths,
+    biologicalAgeLabel: formatAgeWithMonths(biologicalAge, biologicalAgeMonths),
     deltaYears,
     score,
     confidence: confidence(q),
