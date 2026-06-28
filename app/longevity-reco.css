@@ -20,3 +20,13 @@
   .metricGrid div:nth-child(2n) { border-left: 0; }
   .metricGrid div:nth-child(n+2) { border-top: 1px solid rgba(16, 35, 27, 0.08); }
 }
+
+@media (max-width: 760px) {
+  .recoHero { padding-top: 28px; }
+  .recoHero .profileIntro,
+  .recoHero .profilePanel,
+  .referencePreview { padding: 28px; border-radius: 30px; }
+  .recoHero .profileIntro h1,
+  .referencePreview h2 { font-size: clamp(2.7rem, 15vw, 4.6rem); line-height: .88; letter-spacing: -.07em; }
+  .recoHero .profileIntro p { font-size: 1.12rem; line-height: 1.48; }
+}
