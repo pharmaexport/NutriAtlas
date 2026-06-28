@@ -1,0 +1,21 @@
+.metricGrid {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid rgba(16, 35, 27, 0.08);
+  border-radius: 26px;
+  background: #f0f5e9;
+}
+.metricGrid div {
+  border-radius: 0;
+  background: transparent;
+}
+.metricGrid div:nth-child(2n) { border-left: 1px solid rgba(16, 35, 27, 0.08); }
+.metricGrid div:nth-child(n+3) { border-top: 1px solid rgba(16, 35, 27, 0.08); }
+.metricAge { font-size: clamp(1.35rem, 2.8vw, 2.25rem) !important; letter-spacing: -0.055em; }
+.gainPill { display: inline-flex !important; width: fit-content; margin: 12px 0 6px !important; padding: 8px 11px; border-radius: 999px; background: #edf4e8; color: #315530 !important; font-weight: 950 !important; }
+.gainNote { margin-top: 7px !important; color: #6b766f !important; }
+
+@media (max-width: 900px) {
+  .metricGrid div:nth-child(2n) { border-left: 0; }
+  .metricGrid div:nth-child(n+2) { border-top: 1px solid rgba(16, 35, 27, 0.08); }
+}
