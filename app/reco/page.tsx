@@ -177,7 +177,6 @@ export default function RecoPage() {
           <div className="metricGrid">
             <div><span>Âge bio estimé</span><strong className="metricAge">{longevity.biologicalAgeLabel}</strong><small>estimation statistique</small></div>
             <div><span>Score longévité</span><strong>{longevity.score}</strong><small>indice global / 100</small></div>
-            <div><span>Confiance</span><strong className="metricText">{longevity.confidence}</strong><small>questionnaire</small></div>
             <div><span>Activité</span><strong>{activityEquivalent(questionnaire)}</strong><small>min équiv. / semaine</small></div>
           </div>
         </aside>
