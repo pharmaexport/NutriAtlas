@@ -56,15 +56,15 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
 
   if (equivalent < 150) {
     recommendations.push({
-      title: "Augmenter le socle cardio",
-      body: "Vise progressivement 150 minutes d’activité modérée par semaine, ou 75 minutes intenses. Les minutes intenses comptent double dans ce suivi.",
+      title: "Bouger plus chaque semaine",
+      body: "Monte progressivement à 150 min d’activité modérée par semaine, ou 75 min intenses. Ici, 1 min intense = 2 min modérées.",
       source: "OMS / NHS",
       gain: computableGain(6, 15, 30, "modérée")
     });
   } else {
     recommendations.push({
-      title: "Cardio : socle atteint",
-      body: `Tu déclares environ ${equivalent} minutes équivalentes modérées par semaine. Le prochain levier est la régularité et la réduction du temps assis.`,
+      title: "Cardio validé",
+      body: `Tu déclares environ ${equivalent} min équivalentes par semaine. Priorité : garder le rythme et bouger pendant les longues phases assises.`,
       source: "OMS / NHS",
       gain: computableGain(1, 4, 8, "faible")
     });
@@ -72,8 +72,8 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
 
   if ((q.strengthSessions || 0) < 2) {
     recommendations.push({
-      title: "Ajouter du renforcement musculaire",
-      body: "Ajoute 2 séances de renforcement par semaine : jambes, dos, poussée, tirage et gainage. C’est important pour la masse musculaire, le métabolisme et le vieillissement fonctionnel.",
+      title: "Renforcer 2 fois/semaine",
+      body: "Prévois 2 séances par semaine : jambes, dos, poussée, tirage et gainage. Objectif : préserver muscle, métabolisme et autonomie.",
       source: "ANSES / NHS",
       gain: computableGain(6, 12, 20, "modérée")
     });
@@ -81,8 +81,8 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
 
   if ((q.mobilitySessions || 0) < 2) {
     recommendations.push({
-      title: "Mobilité et assouplissement",
-      body: "Ajoute 2 à 3 moments de mobilité, équilibre ou assouplissement par semaine : yoga, pilates, étirements actifs ou travail d’amplitude.",
+      title: "Garder de la mobilité",
+      body: "Ajoute 2 à 3 séances courtes : mobilité, équilibre, yoga, pilates ou étirements actifs.",
       source: "ANSES",
       gain: nonComputableGain("Impact fonctionnel probable ; effet longévité direct difficile à isoler.")
     });
@@ -90,8 +90,8 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
 
   if ((q.sittingHours || 0) > 8) {
     recommendations.push({
-      title: "Réduire la sédentarité",
-      body: "Au-dessus de 8 heures assis par jour, ajoute des pauses actives : 2 à 5 minutes de marche ou mobilité toutes les 60 à 90 minutes.",
+      title: "Couper les longues périodes assises",
+      body: "Au-delà de 8 h assis/jour, fais 2 à 5 min de marche ou mobilité toutes les 60 à 90 min.",
       source: "ANSES / OMS",
       gain: computableGain(4, 10, 18, "modérée")
     });
@@ -99,8 +99,8 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
 
   if ((q.fruitVegServingsPerDay || 0) < 5) {
     recommendations.push({
-      title: "Fruits et légumes",
-      body: "Augmente progressivement vers 5 portions par jour, en priorité légumes, fruits entiers, légumineuses et aliments peu transformés.",
+      title: "Viser 5 portions végétales",
+      body: "Monte vers 5 portions par jour : légumes, fruits entiers, légumineuses et aliments peu transformés.",
       source: "OMS",
       gain: computableGain(6, 14, 28, "modérée")
     });
@@ -108,8 +108,8 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
 
   if ((q.legumesPerWeek || 0) < 3) {
     recommendations.push({
-      title: "Légumineuses",
-      body: "Ajoute lentilles, pois chiches, haricots ou pois cassés 2 à 3 fois par semaine pour les fibres, les protéines végétales et la satiété.",
+      title: "Ajouter des légumineuses",
+      body: "Ajoute lentilles, pois chiches, haricots ou pois cassés 2 à 3 fois/semaine pour les fibres, protéines végétales et la satiété.",
       source: "OMS / PNNS",
       gain: computableGain(3, 6, 12, "faible")
     });
@@ -118,15 +118,15 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
   if (q.ultraProcessed === "frequent" || q.ultraProcessed === "daily") {
     recommendations.push({
       title: "Réduire les ultra-transformés",
-      body: "Remplace une prise ultra-transformée par jour par une option simple : fruit + oléagineux, yaourt nature, légumineuses, œufs, poisson, céréales complètes ou légumes.",
+      body: "Remplace une prise par jour par une option simple : fruit + oléagineux, yaourt nature, œufs, poisson, céréales complètes ou légumes.",
       source: "OMS",
       gain: computableGain(4, 9, 18, "faible")
     });
   }
 
   recommendations.push({
-    title: "Repères nutritionnels actifs",
-    body: `Ton profil calcule environ ${summary.calories} kcal/j, avec des repères personnalisés pour protéines, glucides, lipides, sucres, fibres, sodium, potassium et magnésium.`,
+    title: "Suivre tes repères clés",
+    body: `Ton profil estime ${summary.calories} kcal/j et fixe tes repères prioritaires : protéines, fibres, sucres, sodium, potassium et magnésium.`,
     source: "ANSES / profil NutriAtlas",
     gain: nonComputableGain("Repère de pilotage nutritionnel ; gain isolé non robuste.")
   });
@@ -152,7 +152,7 @@ export default function RecoPage() {
         <a className="brand" href="/">NutriAtlas</a>
         <div className="navLinks">
           <a href="/profil">Profil</a>
-          <a href="/reco">Reco profil</a>
+          <a href="/reco">Conseils</a>
           <a href="/longevite">Longévité</a>
           <a href="/search">Recherche</a>
           <a href="/cumul">Cumul</a>
@@ -161,14 +161,14 @@ export default function RecoPage() {
 
       <section className="profileHero pageSection">
         <div className="profileIntro">
-          <p className="eyebrow">Reco profil</p>
-          <h1>Recommandations personnalisées, sourcées et actionnables.</h1>
+          <p className="eyebrow">Conseils profil</p>
+          <h1>Priorités nutrition et longévité.</h1>
           <p>
-            Cette page transforme le profil, le questionnaire longévité et les repères nutritionnels en priorités concrètes inspirées des recommandations ANSES, OMS et NHS.
+            Profil, questionnaire et repères nutritionnels réunis en actions claires, classées par impact et sourcées ANSES, OMS et NHS.
           </p>
           <div className="ctaRow">
-            <a className="primaryCta" href="/longevite">Remplir longévité</a>
-            <a className="secondaryCta" href="/profil">Modifier le profil</a>
+            <a className="primaryCta" href="/longevite">Compléter longévité</a>
+            <a className="secondaryCta" href="/profil">Ajuster le profil</a>
           </div>
         </div>
 
@@ -184,8 +184,8 @@ export default function RecoPage() {
 
       <section className="pageSection profileFormPreview">
         <div className="referencePreview">
-          <p className="eyebrow">Priorités</p>
-          <h2>À faire selon ton profil.</h2>
+          <p className="eyebrow">Actions prioritaires</p>
+          <h2>Ce qui compte maintenant.</h2>
           <div className="referenceList">
             {recommendations.map((item) => (
               <article key={item.title}>
@@ -197,8 +197,8 @@ export default function RecoPage() {
             ))}
           </div>
           <div className="sourceNote">
-            <strong>Sources officielles</strong>
-            <p><small>ANSES : activité cardiorespiratoire, renforcement musculaire, assouplissement et sédentarité. OMS : activité physique, alimentation saine, sucres, sel et graisses. NHS : repères pratiques d’activité modérée, intense, renforcement et réduction du temps assis.</small></p>
+            <strong>Bases officielles</strong>
+            <p><small>ANSES : cardio, renforcement, mobilité et sédentarité. OMS : activité physique, alimentation saine, sucres, sel et graisses. NHS : repères pratiques pour bouger plus et rester moins assis.</small></p>
             <p><small>Les gains affichés sont des ordres de grandeur populationnels. Ils ne constituent pas une promesse individuelle et ne s’additionnent pas toujours directement.</small></p>
           </div>
         </div>
