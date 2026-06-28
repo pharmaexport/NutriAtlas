@@ -2,6 +2,7 @@ import "./globals.css";
 import "./product.css";
 import "./profile-references.css";
 import "./design-refresh.css";
+import "./longevity-reco.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
