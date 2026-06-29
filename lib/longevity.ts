@@ -8,6 +8,9 @@ export type InjuryStatus = "none" | "light" | "frequent" | "limited";
 export type SleepQuality = "good" | "average" | "poor";
 export type TobaccoStatus = "never" | "former" | "nicotine" | "current";
 export type Frequency = "rare" | "some" | "frequent" | "daily";
+export type EnergyStability = "stable" | "variable" | "crash" | "unknown";
+export type ChangeStatus = "none" | "slight" | "clear" | "unknown";
+export type PreferredAction = "nutrition" | "movement" | "sleep" | "stress" | "supplements" | "any";
 
 export type LongevityQuestionnaire = {
   sportType: SportType;
@@ -22,6 +25,14 @@ export type LongevityQuestionnaire = {
   sleepHours: number | null;
   sleepQuality: SleepQuality;
   stressLevel: number | null;
+  fatigueLevel: number | null;
+  energyStability: EnergyStability;
+  appetiteChange: ChangeStatus;
+  unintentionalWeightLoss: ChangeStatus;
+  emotionalEating: Frequency;
+  motivationLevel: number | null;
+  availableMinutes: number | null;
+  preferredAction: PreferredAction;
   tobacco: TobaccoStatus;
   alcoholDrinksPerWeek: number | null;
   fruitVegServingsPerDay: number | null;
@@ -29,6 +40,10 @@ export type LongevityQuestionnaire = {
   wholeGrains: Frequency;
   ultraProcessed: Frequency;
   sugaryDrinksPerWeek: number | null;
+  proteinAtMeals: Frequency;
+  nutsSeedsPerWeek: number | null;
+  fattyFishPerWeek: number | null;
+  processedMeatPerWeek: number | null;
   systolic: number | null;
   diastolic: number | null;
   restingHeartRate: number | null;
@@ -48,6 +63,9 @@ export type LongevityResult = {
   biologicalAgeLabel: string;
   deltaYears: number;
   score: number;
+  healthyLifeGainLowMonths: number;
+  healthyLifeGainHighMonths: number;
+  healthyLifeGainLabel: string;
   confidence: "faible" | "moyenne" | "bonne";
   components: LongevityComponent[];
   favorable: string[];
@@ -102,6 +120,29 @@ export const frequencyOptions: Array<{ value: Frequency; label: string }> = [
   { value: "daily", label: "Tous les jours" }
 ];
 
+export const energyStabilityOptions: Array<{ value: EnergyStability; label: string }> = [
+  { value: "stable", label: "Plutôt stable" },
+  { value: "variable", label: "Variable" },
+  { value: "crash", label: "Coups de barre fréquents" },
+  { value: "unknown", label: "Je ne sais pas" }
+];
+
+export const changeStatusOptions: Array<{ value: ChangeStatus; label: string }> = [
+  { value: "none", label: "Non" },
+  { value: "slight", label: "Un peu" },
+  { value: "clear", label: "Oui, clairement" },
+  { value: "unknown", label: "Je ne sais pas" }
+];
+
+export const preferredActionOptions: Array<{ value: PreferredAction; label: string }> = [
+  { value: "nutrition", label: "Alimentation" },
+  { value: "movement", label: "Mouvement / sport" },
+  { value: "sleep", label: "Sommeil" },
+  { value: "stress", label: "Stress" },
+  { value: "supplements", label: "Nutriments / actifs" },
+  { value: "any", label: "Le plus utile" }
+];
+
 export const defaultLongevityQuestionnaire: LongevityQuestionnaire = {
   sportType: "walking",
   moderateMinutes: 150,
@@ -115,6 +156,14 @@ export const defaultLongevityQuestionnaire: LongevityQuestionnaire = {
   sleepHours: 7,
   sleepQuality: "average",
   stressLevel: 5,
+  fatigueLevel: 4,
+  energyStability: "unknown",
+  appetiteChange: "none",
+  unintentionalWeightLoss: "none",
+  emotionalEating: "some",
+  motivationLevel: 6,
+  availableMinutes: 10,
+  preferredAction: "any",
   tobacco: "never",
   alcoholDrinksPerWeek: 0,
   fruitVegServingsPerDay: 4,
@@ -122,6 +171,10 @@ export const defaultLongevityQuestionnaire: LongevityQuestionnaire = {
   wholeGrains: "some",
   ultraProcessed: "some",
   sugaryDrinksPerWeek: 0,
+  proteinAtMeals: "some",
+  nutsSeedsPerWeek: 2,
+  fattyFishPerWeek: 1,
+  processedMeatPerWeek: 1,
   systolic: null,
   diastolic: null,
   restingHeartRate: null
@@ -133,6 +186,9 @@ const injuryValues: readonly InjuryStatus[] = ["none", "light", "frequent", "lim
 const sleepValues: readonly SleepQuality[] = ["good", "average", "poor"];
 const tobaccoValues: readonly TobaccoStatus[] = ["never", "former", "nicotine", "current"];
 const frequencyValues: readonly Frequency[] = ["rare", "some", "frequent", "daily"];
+const energyValues: readonly EnergyStability[] = ["stable", "variable", "crash", "unknown"];
+const changeValues: readonly ChangeStatus[] = ["none", "slight", "clear", "unknown"];
+const preferredActionValues: readonly PreferredAction[] = ["nutrition", "movement", "sleep", "stress", "supplements", "any"];
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -140,18 +196,10 @@ function clamp(value: number, min: number, max: number) {
 
 function numberOrNull(value: unknown, min: number, max: number, decimals = 0) {
   if (value === null || value === undefined || value === "") return null;
-  const numeric = typeof value === "number" ? value : Number(value);
+  const numeric = typeof value === "number" ? value : Number(String(value).replace(",", "."));
   if (!Number.isFinite(numeric)) return null;
   const factor = Math.pow(10, decimals);
   return Math.round(clamp(numeric, min, max) * factor) / factor;
-}
-
-function freeNumberOrNull(value: unknown, decimals = 0) {
-  if (value === null || value === undefined || value === "") return null;
-  const numeric = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(numeric)) return null;
-  const factor = Math.pow(10, decimals);
-  return Math.round(numeric * factor) / factor;
 }
 
 function optionValue<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
@@ -172,6 +220,14 @@ export function normalizeLongevityQuestionnaire(input?: Partial<LongevityQuestio
     sleepHours: numberOrNull(input?.sleepHours, 3, 12, 1),
     sleepQuality: optionValue(input?.sleepQuality, sleepValues, defaultLongevityQuestionnaire.sleepQuality),
     stressLevel: numberOrNull(input?.stressLevel, 0, 10),
+    fatigueLevel: numberOrNull(input?.fatigueLevel, 0, 10),
+    energyStability: optionValue(input?.energyStability, energyValues, defaultLongevityQuestionnaire.energyStability),
+    appetiteChange: optionValue(input?.appetiteChange, changeValues, defaultLongevityQuestionnaire.appetiteChange),
+    unintentionalWeightLoss: optionValue(input?.unintentionalWeightLoss, changeValues, defaultLongevityQuestionnaire.unintentionalWeightLoss),
+    emotionalEating: optionValue(input?.emotionalEating, frequencyValues, defaultLongevityQuestionnaire.emotionalEating),
+    motivationLevel: numberOrNull(input?.motivationLevel, 0, 10),
+    availableMinutes: numberOrNull(input?.availableMinutes, 0, 120),
+    preferredAction: optionValue(input?.preferredAction, preferredActionValues, defaultLongevityQuestionnaire.preferredAction),
     tobacco: optionValue(input?.tobacco, tobaccoValues, defaultLongevityQuestionnaire.tobacco),
     alcoholDrinksPerWeek: numberOrNull(input?.alcoholDrinksPerWeek, 0, 80),
     fruitVegServingsPerDay: numberOrNull(input?.fruitVegServingsPerDay, 0, 12, 1),
@@ -179,9 +235,13 @@ export function normalizeLongevityQuestionnaire(input?: Partial<LongevityQuestio
     wholeGrains: optionValue(input?.wholeGrains, frequencyValues, defaultLongevityQuestionnaire.wholeGrains),
     ultraProcessed: optionValue(input?.ultraProcessed, frequencyValues, defaultLongevityQuestionnaire.ultraProcessed),
     sugaryDrinksPerWeek: numberOrNull(input?.sugaryDrinksPerWeek, 0, 50),
+    proteinAtMeals: optionValue(input?.proteinAtMeals, frequencyValues, defaultLongevityQuestionnaire.proteinAtMeals),
+    nutsSeedsPerWeek: numberOrNull(input?.nutsSeedsPerWeek, 0, 21),
+    fattyFishPerWeek: numberOrNull(input?.fattyFishPerWeek, 0, 14),
+    processedMeatPerWeek: numberOrNull(input?.processedMeatPerWeek, 0, 21),
     systolic: numberOrNull(input?.systolic, 70, 240),
     diastolic: numberOrNull(input?.diastolic, 40, 140),
-    restingHeartRate: freeNumberOrNull(input?.restingHeartRate)
+    restingHeartRate: numberOrNull(input?.restingHeartRate, 35, 220)
   };
 }
 
@@ -237,6 +297,24 @@ function scoreSleep(q: LongevityQuestionnaire) {
   return clamp(score, 0, 10);
 }
 
+function scoreStressRecovery(q: LongevityQuestionnaire) {
+  const stress = q.stressLevel ?? 5;
+  const fatigue = q.fatigueLevel ?? 4;
+  let score = 10;
+  if (stress >= 8) score -= 4;
+  else if (stress >= 6) score -= 2;
+  else if (stress <= 3) score += 1;
+
+  if (fatigue >= 8) score -= 4;
+  else if (fatigue >= 6) score -= 2;
+
+  if (q.energyStability === "stable") score += 1;
+  if (q.energyStability === "crash") score -= 2;
+  if (q.emotionalEating === "frequent" || q.emotionalEating === "daily") score -= 2;
+
+  return clamp(score, 0, 10);
+}
+
 function scoreTobacco(q: LongevityQuestionnaire) {
   if (q.tobacco === "never") return 12;
   if (q.tobacco === "former") return 9;
@@ -269,8 +347,8 @@ function scoreMorphology(profile: UserProfile) {
 function scoreNutrition(q: LongevityQuestionnaire) {
   let score = 0;
   const fruitVeg = q.fruitVegServingsPerDay ?? 0;
-  if (fruitVeg >= 5) score += 7;
-  else if (fruitVeg >= 3) score += 5;
+  if (fruitVeg >= 5) score += 6;
+  else if (fruitVeg >= 3) score += 4;
   else if (fruitVeg >= 1) score += 2;
 
   if ((q.legumesPerWeek || 0) >= 3) score += 4;
@@ -280,14 +358,31 @@ function scoreNutrition(q: LongevityQuestionnaire) {
   else if (q.wholeGrains === "frequent") score += 3;
   else if (q.wholeGrains === "some") score += 1;
 
-  if (q.ultraProcessed === "rare") score += 6;
-  else if (q.ultraProcessed === "some") score += 4;
+  if (q.ultraProcessed === "rare") score += 5;
+  else if (q.ultraProcessed === "some") score += 3;
   else if (q.ultraProcessed === "frequent") score += 1;
 
-  if ((q.sugaryDrinksPerWeek || 0) === 0) score += 4;
-  else if ((q.sugaryDrinksPerWeek || 0) <= 2) score += 2;
+  if ((q.sugaryDrinksPerWeek || 0) === 0) score += 3;
+  else if ((q.sugaryDrinksPerWeek || 0) <= 2) score += 1;
 
-  return clamp(score, 0, 25);
+  if (q.proteinAtMeals === "daily") score += 3;
+  else if (q.proteinAtMeals === "frequent") score += 2;
+  else if (q.proteinAtMeals === "some") score += 1;
+
+  if ((q.nutsSeedsPerWeek || 0) >= 5) score += 3;
+  else if ((q.nutsSeedsPerWeek || 0) >= 2) score += 2;
+
+  if ((q.fattyFishPerWeek || 0) >= 2) score += 3;
+  else if ((q.fattyFishPerWeek || 0) >= 1) score += 1;
+
+  const processed = q.processedMeatPerWeek ?? 0;
+  if (processed === 0) score += 4;
+  else if (processed <= 1) score += 2;
+
+  if (q.appetiteChange === "clear" || q.unintentionalWeightLoss === "clear") score -= 4;
+  else if (q.appetiteChange === "slight" || q.unintentionalWeightLoss === "slight") score -= 2;
+
+  return clamp(score, 0, 35);
 }
 
 function scoreVitals(q: LongevityQuestionnaire) {
@@ -308,14 +403,6 @@ function scoreVitals(q: LongevityQuestionnaire) {
     score += 1;
   }
   return clamp(score, 0, 7);
-}
-
-function scoreStress(q: LongevityQuestionnaire) {
-  const stress = q.stressLevel ?? 5;
-  if (stress <= 3) return 6;
-  if (stress <= 6) return 4;
-  if (stress <= 8) return 2;
-  return 0;
 }
 
 function deltaFromScore(score: number) {
@@ -353,11 +440,21 @@ function deltaMonthsFromScore(score: number) {
   return 84;
 }
 
+function healthyLifePotential(score: number) {
+  if (score >= 90) return { low: 3, high: 12 };
+  if (score >= 80) return { low: 6, high: 24 };
+  if (score >= 70) return { low: 12, high: 36 };
+  if (score >= 60) return { low: 18, high: 48 };
+  if (score >= 50) return { low: 24, high: 72 };
+  return { low: 36, high: 96 };
+}
+
 function confidence(q: LongevityQuestionnaire) {
   const optionalFilled = [q.systolic, q.diastolic, q.restingHeartRate].filter((value) => value !== null).length;
   const activityFilled = q.moderateMinutes !== null || q.vigorousMinutes !== null;
-  if (optionalFilled >= 3 && activityFilled) return "bonne";
-  if (activityFilled) return "moyenne";
+  const globalFilled = q.fatigueLevel !== null && q.stressLevel !== null && q.motivationLevel !== null;
+  if (optionalFilled >= 3 && activityFilled && globalFilled) return "bonne";
+  if (activityFilled && globalFilled) return "moyenne";
   return "faible";
 }
 
@@ -369,33 +466,39 @@ export function calculateLongevityAge(profileInput: Partial<UserProfile>, questi
   const profile = normalizeProfile(profileInput);
   const q = normalizeLongevityQuestionnaire(questionnaireInput || defaultLongevityQuestionnaire);
   const components: LongevityComponent[] = [
-    { key: "nutrition", label: "Nutrition", score: scoreNutrition(q), max: 25 },
+    { key: "nutrition", label: "Nutrition qualité", score: scoreNutrition(q), max: 35 },
     { key: "activity", label: "Activité physique", score: scoreActivity(q), max: 20 },
     { key: "sedentary", label: "Sédentarité", score: scoreSedentary(q), max: 10 },
     { key: "sleep", label: "Sommeil", score: scoreSleep(q), max: 10 },
+    { key: "stress_recovery", label: "Stress / fatigue", score: scoreStressRecovery(q), max: 10 },
     { key: "tobacco", label: "Tabac / nicotine", score: scoreTobacco(q), max: 12 },
     { key: "alcohol", label: "Alcool", score: scoreAlcohol(q), max: 6 },
     { key: "morphology", label: "Morphologie", score: scoreMorphology(profile), max: 10 },
     { key: "vitals", label: "Mesures santé", score: scoreVitals(q), max: 7 }
   ];
-  const baseScore = components.reduce((sum, item) => sum + item.score, 0);
-  const score = clamp(Math.round(baseScore + scoreStress(q) * 0.6), 0, 100);
+  const rawScore = components.reduce((sum, item) => sum + item.score, 0);
+  const maxScore = components.reduce((sum, item) => sum + item.max, 0);
+  const score = clamp(Math.round((rawScore / maxScore) * 100), 0, 100);
   const deltaMonths = deltaMonthsFromScore(score);
   const totalBiologicalMonths = Math.round(clamp(profile.age * 12 + deltaMonths, 18 * 12, 100 * 12));
   const biologicalAge = Math.floor(totalBiologicalMonths / 12);
   const biologicalAgeMonths = totalBiologicalMonths % 12;
   const deltaYears = deltaFromScore(score);
+  const healthyLifeGain = healthyLifePotential(score);
 
   const favorable: string[] = [];
   const unfavorable: string[] = [];
   if (scoreActivity(q) >= 15) favorable.push("activité physique régulière");
-  if (scoreNutrition(q) >= 18) favorable.push("habitudes alimentaires protectrices");
+  if (scoreNutrition(q) >= 25) favorable.push("habitudes alimentaires protectrices");
   if (q.tobacco === "never" || q.tobacco === "former") favorable.push("tabac/nicotine peu défavorable");
   if ((q.sittingHours || 0) > 8) unfavorable.push("sédentarité élevée");
   if (q.tobacco === "current" || q.tobacco === "nicotine") unfavorable.push("tabac ou nicotine");
   if ((q.sleepHours || 7) < 6 || q.sleepQuality === "poor") unfavorable.push("sommeil insuffisant ou de mauvaise qualité");
   if (q.ultraProcessed === "daily" || q.ultraProcessed === "frequent") unfavorable.push("aliments ultra-transformés fréquents");
   if ((q.alcoholDrinksPerWeek || 0) > 14) unfavorable.push("alcool élevé");
+  if ((q.fatigueLevel || 0) >= 7) unfavorable.push("fatigue élevée");
+  if ((q.stressLevel || 0) >= 8) unfavorable.push("stress intense");
+  if (q.appetiteChange === "clear" || q.unintentionalWeightLoss === "clear") unfavorable.push("appétit ou poids à surveiller");
 
   return {
     chronologicalAge: profile.age,
@@ -404,6 +507,9 @@ export function calculateLongevityAge(profileInput: Partial<UserProfile>, questi
     biologicalAgeLabel: formatAgeWithMonths(biologicalAge, biologicalAgeMonths),
     deltaYears,
     score,
+    healthyLifeGainLowMonths: healthyLifeGain.low,
+    healthyLifeGainHighMonths: healthyLifeGain.high,
+    healthyLifeGainLabel: `+${healthyLifeGain.low} à +${healthyLifeGain.high} mois`,
     confidence: confidence(q),
     components,
     favorable,
