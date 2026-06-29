@@ -22,6 +22,8 @@ type Recommendation = {
   nutrients: string[];
   actives: string[];
   mechanisms: string[];
+  supplementGuidance?: string[];
+  precautions?: string;
   proof: "fort" | "modéré" | "émergent" | "pilotage";
   gain: LongevityGainEstimate;
   priorityScore: number;
@@ -74,7 +76,7 @@ function motivationFactor(q: LongevityQuestionnaire, preferred: Recommendation["
   if (q.preferredAction === "movement" && ["Socle cardio", "Renforcement", "Moins assis", "Mobilité"].includes(preferred)) return base * 1.15;
   if (q.preferredAction === "sleep" && preferred === "Sommeil") return base * 1.15;
   if (q.preferredAction === "stress" && preferred === "Stress / fatigue") return base * 1.15;
-  if (q.preferredAction === "supplements" && ["Magnésium", "Vitamine D", "Créatine"].includes(preferred)) return base * 1.15;
+  if (q.preferredAction === "supplements" && ["Magnésium", "Vitamine D", "Créatine", "Oméga-3", "Renforcement", "Réserves nutritionnelles"].includes(preferred)) return base * 1.15;
   return base;
 }
 
@@ -99,6 +101,7 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
       nutrients: ["potassium", "magnésium", "glucides de qualité"],
       actives: ["polyphénols alimentaires"],
       mechanisms: ["santé cardio-métabolique", "glycémie", "inflammation"],
+      precautions: "Aucun complément recommandé en première intention : le levier efficace est l’activité régulière.",
       proof: "fort",
       gain: computableGain(6, 15, 30, "modérée"),
       detail: "Le cardio reste un socle : il soutient la capacité respiratoire, la tension, la glycémie et la santé vasculaire. Les minutes intenses comptent double dans ce suivi."
@@ -112,6 +115,7 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
       nutrients: ["potassium", "magnésium"],
       actives: ["polyphénols alimentaires"],
       mechanisms: ["régularité", "santé vasculaire"],
+      precautions: "Aucun complément recommandé en première intention : priorité à la régularité et aux pauses actives.",
       proof: "modéré",
       gain: computableGain(1, 4, 8, "faible"),
       detail: "Le levier principal n’est plus d’ajouter beaucoup de cardio, mais de préserver la régularité et de réduire les longues périodes immobiles."
@@ -126,10 +130,12 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
       source: "ANSES / NHS",
       nutrients: ["protéines", "leucine", "vitamine D", "magnésium"],
       actives: ["créatine monohydrate"],
+      supplementGuidance: ["Créatine monohydrate : 3 g/jour, surtout si elle accompagne un renforcement régulier."],
+      precautions: "Avis médical en cas de maladie rénale, traitement lourd, grossesse/allaitement ou doute clinique. Ne remplace pas l’apport en protéines ni l’entraînement.",
       mechanisms: ["masse musculaire", "métabolisme", "autonomie", "ATP musculaire"],
       proof: "fort",
       gain: computableGain(6, 12, 20, "modérée"),
-      detail: "La recommandation active prioritaire est l’exercice. La créatine peut être pertinente chez certains profils, surtout si elle accompagne un vrai travail musculaire."
+      detail: "La recommandation active prioritaire est l’exercice. La créatine n’est proposée qu’en option ciblée, avec dose affichée, quand le profil muscle/force le justifie."
     }, 2 - (q.strengthSessions || 0), 1.3);
   }
 
@@ -142,6 +148,7 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
       nutrients: ["magnésium", "potassium"],
       actives: [],
       mechanisms: ["glycémie", "circulation", "métabolisme"],
+      precautions: "Aucun complément recommandé : le levier efficace est la rupture régulière de la position assise.",
       proof: "modéré",
       gain: computableGain(4, 10, 18, "modérée"),
       detail: "La sédentarité doit être considérée comme un levier distinct du sport : on peut faire du sport et rester trop longtemps assis."
@@ -157,6 +164,7 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
       nutrients: ["vitamine C", "folates", "potassium", "fibres", "magnésium"],
       actives: ["polyphénols", "caroténoïdes", "flavonoïdes"],
       mechanisms: ["inflammation", "stress oxydatif", "microbiote", "santé vasculaire"],
+      precautions: "Aucun complément de vitamine C ou polyphénols recommandé en première intention : priorité aux aliments entiers et à la diversité végétale.",
       proof: "fort",
       gain: computableGain(6, 14, 28, "modérée"),
       detail: "Le bénéfice longévité ne vient pas d’une vitamine isolée, mais du profil végétal complet : fibres, micronutriments, diversité et composés bioactifs."
@@ -170,8 +178,9 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
       action: "Ajoute lentilles, pois chiches, haricots ou pois cassés 2 à 3 fois par semaine.",
       source: "OMS / PNNS",
       nutrients: ["fibres", "protéines végétales", "magnésium", "folates", "potassium"],
-      actives: ["prébiotiques"],
+      actives: ["prébiotiques alimentaires"],
       mechanisms: ["microbiote", "glycémie", "satiété", "cardio-métabolique"],
+      precautions: "Aucun complément prébiotique recommandé en première intention : commencer par les fibres alimentaires, progressivement pour limiter l’inconfort digestif.",
       proof: "fort",
       gain: computableGain(3, 6, 12, "faible"),
       detail: "C’est l’un des ponts les plus cohérents entre qualité alimentaire, fibres, protéines végétales et santé métabolique."
@@ -185,8 +194,9 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
       action: "Ajoute une petite poignée de noix, amandes ou graines 4 à 5 jours par semaine.",
       source: "PNNS / études longévité",
       nutrients: ["magnésium", "vitamine E", "fibres", "acides gras insaturés"],
-      actives: ["polyphénols"],
+      actives: ["polyphénols alimentaires"],
       mechanisms: ["inflammation", "cardio-métabolique", "satiété"],
+      precautions: "Aucun complément recommandé en première intention : l’intérêt vient surtout de l’aliment entier et du remplacement d’en-cas moins denses nutritionnellement.",
       proof: "modéré",
       gain: computableGain(2, 6, 14, "faible"),
       detail: "Les noix et graines sont surtout utiles comme remplacement d’en-cas pauvres en nutriments."
@@ -201,10 +211,12 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
       source: "ANSES / EFSA",
       nutrients: ["EPA", "DHA", "vitamine D", "iode"],
       actives: ["oméga-3 EPA/DHA"],
+      supplementGuidance: ["EPA + DHA : 250 à 500 mg/jour si les apports alimentaires restent insuffisants ou si option algale."],
+      precautions: "Doses plus élevées uniquement sur avis médical, surtout en cas d’anticoagulants, trouble de la coagulation, chirurgie programmée ou pathologie cardiovasculaire suivie.",
       mechanisms: ["inflammation", "cerveau", "membranes cellulaires", "cœur"],
       proof: "modéré",
       gain: integratedImpact("Impact intégré cardio/cerveau", "L’effet isolé en mois n’est pas assez robuste pour être affiché seul."),
-      detail: "Les oméga-3 sont intégrés au score fonctionnel plutôt qu’affichés comme mois isolés."
+      detail: "Les oméga-3 sont intégrés au score fonctionnel plutôt qu’affichés comme mois isolés. Le complément n’est proposé qu’avec dose EPA+DHA lisible."
     }, 2 - (q.fattyFishPerWeek || 0), 0.8);
   }
 
@@ -217,6 +229,7 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
       nutrients: ["fibres", "potassium", "protéines", "micronutriments"],
       actives: [],
       mechanisms: ["densité nutritionnelle", "satiété", "glycémie", "inflammation"],
+      precautions: "Aucun complément ne compense une fréquence élevée d’ultra-transformés : priorité au remplacement progressif.",
       proof: "modéré",
       gain: computableGain(4, 9, 18, "faible"),
       detail: "L’objectif n’est pas la perfection : un remplacement régulier peut déjà améliorer les réserves nutritionnelles."
@@ -231,10 +244,12 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
       source: "Profil NutriAtlas",
       nutrients: ["magnésium", "vitamines B", "oméga-3"],
       actives: ["magnésium selon apport", "polyphénols alimentaires"],
+      supplementGuidance: ["Magnésium élément : 100 à 250 mg/jour si l’apport alimentaire est faible ou si le profil stress/sommeil le justifie."],
+      precautions: "Avis médical en cas d’insuffisance rénale, traitement cardiovasculaire, grossesse/allaitement ou troubles digestifs importants. Le magnésium peut être laxatif selon la forme et la dose.",
       mechanisms: ["cortisol", "récupération", "comportements alimentaires", "sommeil"],
       proof: "pilotage",
       gain: integratedImpact("Impact fonctionnel prioritaire", "Très pertinent pour l’adhérence, mais non isolable en mois."),
-      detail: "Cette carte sert à éviter les plans irréalistes : on traite d’abord le frein principal si la fatigue ou le stress empêchent d’agir."
+      detail: "Cette carte sert à éviter les plans irréalistes : on traite d’abord le frein principal si la fatigue ou le stress empêchent d’agir. Le complément éventuel doit toujours afficher la dose élémentaire."
     }, Math.max(q.stressLevel || 0, q.fatigueLevel || 0), 0.9);
   }
 
@@ -247,6 +262,7 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
       nutrients: ["protéines", "magnésium"],
       actives: [],
       mechanisms: ["amplitude", "équilibre", "autonomie"],
+      precautions: "Aucun complément recommandé : le levier principal est la pratique régulière et adaptée.",
       proof: "pilotage",
       gain: integratedImpact("Impact fonctionnel : mobilité & autonomie", "Effet longévité direct difficile à isoler."),
       detail: "À afficher comme défi optionnel, pas comme promesse de mois : yoga, pilates, étirements actifs ou équilibre sur un pied."
@@ -260,11 +276,17 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
     source: "ANSES / Profil NutriAtlas",
     nutrients: ["protéines", "fibres", "sodium", "potassium", "magnésium", "calcium"],
     actives: ["vitamine D", "oméga-3", "créatine selon profil"],
+    supplementGuidance: [
+      "Vitamine D3 : 800 à 2 000 UI/jour selon exposition, saison, âge et idéalement dosage biologique.",
+      "EPA + DHA : 250 à 500 mg/jour si poisson gras insuffisant ou option algale.",
+      "Créatine monohydrate : 3 g/jour si objectif muscle/force et renforcement régulier."
+    ],
+    precautions: "Ces compléments ne doivent être proposés qu’après vérification du profil, des traitements et des contre-indications. Ils ne remplacent pas les aliments ni les leviers majeurs.",
     mechanisms: ["réserves muscle", "énergie", "os", "immunité", "cardio-métabolique"],
     proof: "pilotage",
     gain: integratedImpact("Impact intégré au score global", "Repères de pilotage nutritionnel, non chiffrables isolément."),
     priorityScore: 30,
-    detail: `Ton profil calcule environ ${summary.calories} kcal/j et des repères personnalisés qui alimentent le Top 3 et le Top 10.`
+    detail: `Ton profil calcule environ ${summary.calories} kcal/j et des repères personnalisés qui alimentent le Top 3 et le Top 10. Toute option complément doit afficher une dose étudiée/efficace, une condition d’usage et une précaution.`
   });
 
   return recommendations.sort((a, b) => b.priorityScore - a.priorityScore);
@@ -283,10 +305,15 @@ function RecoCard({ item, rank }: { item: Recommendation; rank: number }) {
       <div className="chipRow">
         {item.nutrients.slice(0, 5).map((nutrient) => <span key={nutrient}>{nutrient}</span>)}
       </div>
+      {item.supplementGuidance?.length ? (
+        <p><strong>Complément / dose étudiée :</strong> {item.supplementGuidance.join(" · ")}</p>
+      ) : null}
       <details className="recoDetails">
         <summary>+ Détail scientifique</summary>
         <p><strong>Nutriments clés :</strong> {item.nutrients.length ? item.nutrients.join(", ") : "à personnaliser"}.</p>
-        <p><strong>Actifs possibles :</strong> {item.actives.length ? item.actives.join(", ") : "aucun actif spécifique prioritaire"}.</p>
+        <p><strong>Actifs / composés associés :</strong> {item.actives.length ? item.actives.join(", ") : "aucun actif spécifique prioritaire"}.</p>
+        {item.supplementGuidance?.length ? <p><strong>Dose étudiée / efficace :</strong> {item.supplementGuidance.join(" · ")}</p> : <p><strong>Complément :</strong> non recommandé en première intention pour cette carte.</p>}
+        <p><strong>Précaution :</strong> {item.precautions || "À personnaliser selon le profil et les contre-indications."}</p>
         <p><strong>Mécanismes :</strong> {item.mechanisms.join(", ")}.</p>
         <p><strong>Niveau :</strong> {proofLabel(item.proof)} · {item.gain.note}</p>
         <p>{item.detail}</p>
@@ -352,9 +379,10 @@ export default function RecoPage() {
             {recommendations.slice(0, 10).map((item, index) => <RecoCard item={item} rank={index + 1} key={item.title} />)}
           </div>
           <div className="sourceNote">
-            <strong>Lecture des gains</strong>
+            <strong>Lecture des gains et compléments</strong>
             <p><small>Les gains affichés sont des ordres de grandeur populationnels. Ils ne constituent pas une promesse individuelle et ne s’additionnent pas toujours directement.</small></p>
             <p><small>Quand un levier n’est pas chiffrable isolément, il est affiché comme impact fonctionnel ou intégré au score global.</small></p>
+            <p><small>Toute suggestion de complément doit afficher une dose étudiée/efficace, une condition d’usage et une précaution. Aucun complément n’est proposé pour remplacer les leviers majeurs : alimentation, activité, sommeil et récupération.</small></p>
           </div>
         </div>
       </section>
