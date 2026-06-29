@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { SiteNav } from "../components/SiteNav";
 import { defaultProfile, loadStoredProfile, summarizeProfile, type UserProfile } from "../../lib/nutrition-profile";
 import { calculateLongevityAge, defaultLongevityQuestionnaire, loadLongevityQuestionnaire, type LongevityQuestionnaire } from "../../lib/longevity";
 
@@ -148,20 +149,11 @@ export default function RecoPage() {
 
   return (
     <main>
-      <nav className="nav">
-        <a className="brand" href="/">NutriAtlas</a>
-        <div className="navLinks">
-          <a href="/profil">Profil</a>
-          <a href="/reco">Reco profil</a>
-          <a href="/longevite">Longévité</a>
-          <a href="/search">Recherche</a>
-          <a href="/cumul">Cumul</a>
-        </div>
-      </nav>
+      <SiteNav section="reco" showSubTabs />
 
-      <section className="profileHero pageSection recoHero">
+      <section className="profileHero pageSection recoHero" id="priorites">
         <div className="profileIntro">
-          <p className="eyebrow">Reco profil</p>
+          <p className="eyebrow">Reco</p>
           <h1>Reco profil</h1>
           <p>
             Priorités concrètes issues du profil, du questionnaire longévité et des repères ANSES, OMS et NHS.
@@ -182,7 +174,7 @@ export default function RecoPage() {
         </aside>
       </section>
 
-      <section className="pageSection profileFormPreview">
+      <section className="pageSection profileFormPreview" id="gains">
         <div className="referencePreview">
           <p className="eyebrow">Priorités</p>
           <h2>Priorités profil</h2>
