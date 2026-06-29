@@ -12,10 +12,10 @@ type SiteNavProps = {
 const primaryNav = [
   { href: "/", label: "Accueil", section: "home" },
   { href: "/profil", label: "Profil", section: "profil" },
-  { href: "/base", label: "Base", section: "base" },
+  { href: "/base", label: "Base aliments", section: "base" },
   { href: "/cumul", label: "Cumul", section: "cumul" },
-  { href: "/longevite", label: "Longévité", section: "longevite" },
-  { href: "/reco", label: "Reco", section: "reco" }
+  { href: "/longevite", label: "Diagnostic longévité", section: "longevite" },
+  { href: "/reco", label: "Reco âge bio", section: "reco" }
 ] as const;
 
 const subTabs: Record<SectionKey, Array<{ href: string; label: string }>> = {
@@ -55,7 +55,7 @@ function sectionFromPath(pathname: string): SectionKey {
   return "home";
 }
 
-export function SiteNav({ section, showSubTabs = true }: SiteNavProps) {
+export function SiteNav({ section, showSubTabs = false }: SiteNavProps) {
   const pathname = usePathname();
   const activeSection = section || sectionFromPath(pathname || "/");
 
