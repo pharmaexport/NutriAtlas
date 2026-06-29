@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NutriAtlas — Nutrition card visual refresh demo</title>
+    <link rel="stylesheet" href="../../src/styles/nutrition-recommendation-card.css" />
+    <style>
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        background: #eef4e8;
+      }
+    </style>
+  </head>
+  <body>
+    <article class="nutrition-card-v2" aria-labelledby="nutrition-card-title">
+      <header class="nutrition-card-v2__header">
+        <div>
+          <div class="nutrition-card-v2__eyebrow">Fruits & légumes</div>
+          <h1 id="nutrition-card-title" class="nutrition-card-v2__title">
+            Tu es en dessous du repère protecteur de 5 portions/jour.
+          </h1>
+        </div>
+        <img
+          class="nutrition-card-v2__visual"
+          src="../../public/assets/illustrations/nutrition/portion-bowl.svg"
+          alt="Bol de légumes frais"
+        />
+      </header>
+
+      <section class="nutrition-card-v2__benefit" aria-label="Bénéfice estimé">
+        <div class="nutrition-card-v2__benefit-icon">+</div>
+        <div>
+          <p class="nutrition-card-v2__benefit-label">Gain estimé</p>
+          <p class="nutrition-card-v2__benefit-value">+6 à +28 mois en bonne santé</p>
+        </div>
+      </section>
+
+      <section class="nutrition-card-v2__action" aria-label="Action de la semaine">
+        <p class="nutrition-card-v2__action-label">Action semaine</p>
+        <p class="nutrition-card-v2__action-text">Ajoute 1 portion de légumes par jour.</p>
+      </section>
+
+      <p class="nutrition-card-v2__portion-help">
+        1 portion = une soupe, une assiette de légumes ou une poignée de crudités.
+      </p>
+
+      <div class="nutrition-card-v2__trust-row">
+        <span class="nutrition-card-v2__trust-badge">Repère OMS / PNNS</span>
+        <p class="nutrition-card-v2__source-note">Source institutionnelle tracée</p>
+      </div>
+
+      <ul class="nutrition-card-v2__nutrients" aria-label="Nutriments clés">
+        <li class="nutrition-card-v2__nutrient">Vitamine C</li>
+        <li class="nutrition-card-v2__nutrient">Folates</li>
+        <li class="nutrition-card-v2__nutrient">Potassium</li>
+        <li class="nutrition-card-v2__nutrient">Fibres</li>
+        <li class="nutrition-card-v2__nutrient">Magnésium</li>
+      </ul>
+    </article>
+  </body>
+</html>
