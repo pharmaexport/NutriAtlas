@@ -3,6 +3,7 @@ import "./product.css";
 import "./profile-references.css";
 import "./design-refresh.css";
 import "./longevity-reco.css";
+import { SiteNav } from "./components/SiteNav";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
@@ -14,7 +15,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fr">
-      <body>{children}</body>
+      <body>
+        <SiteNav />
+        {children}
+      </body>
     </html>
   );
 }

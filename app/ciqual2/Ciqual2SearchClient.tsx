@@ -12,7 +12,7 @@ type SearchResult = {
 const portionOptions = [50, 100, 150, 200, 250, 300];
 
 function portionHref(foodCode: string, grams: number) {
-  return `/ciqual2/aliment/${foodCode}?portion=${grams}`;
+  return `/base/aliment/${foodCode}?portion=${grams}`;
 }
 
 export function Ciqual2SearchClient() {
@@ -87,12 +87,12 @@ export function Ciqual2SearchClient() {
   }
 
   return (
-    <section className="searchPage pageSection">
+    <section className="searchPage pageSection" id="recherche">
       <div className="searchIntro">
-        <p className="eyebrow">CIQUAL 2</p>
-        <h1>Fiches complètes.</h1>
+        <p className="eyebrow">Base</p>
+        <h1>Recherche aliment.</h1>
         <p>
-          Onglet expérimental séparé : la recherche CIQUAL historique reste inchangée, et CIQUAL 2 ouvre la fiche avec tous les constituants disponibles.
+          Recherche dans la base CIQUAL/ANSES, ouvre une fiche complète et ajoute l’aliment au cumul journalier.
         </p>
       </div>
 
@@ -102,7 +102,7 @@ export function Ciqual2SearchClient() {
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            aria-label="Recherche aliment CIQUAL 2"
+            aria-label="Recherche aliment"
             placeholder="Ex. figue, pizza, pomme..."
             autoComplete="off"
           />
@@ -123,7 +123,7 @@ export function Ciqual2SearchClient() {
 
       {message ? <div className="stateBox">{message}</div> : null}
 
-      <div className="resultList">
+      <div className="resultList" id="fiche">
         {results.map((food) => {
           const grams = selectedPortions[food.source_food_code] || 100;
           return (
