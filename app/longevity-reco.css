@@ -15,6 +15,10 @@
 .recommendationSource { margin: 6px 0 4px !important; color: #4f7e3f !important; font-size: clamp(.88rem, 1.6vw, 1.05rem) !important; line-height: 1.15 !important; letter-spacing: .08em !important; text-transform: uppercase; }
 .gainPill { display: inline-flex !important; width: fit-content; margin: 12px 0 6px !important; padding: 8px 11px; border-radius: 999px; background: #edf4e8; color: #315530 !important; font-weight: 950 !important; }
 .gainNote { margin-top: 7px !important; color: #6b766f !important; }
+.siteNav .navLinks a[aria-current="page"] { background: #eef4e6; color: #10231b; }
+.subTabs { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.subTabs::-webkit-scrollbar { display: none; }
+.subTabs a { flex: 0 0 auto; padding: 9px 13px; border-radius: 999px; background: rgba(255,255,255,.82); border: 1px solid rgba(16, 35, 27, 0.1); color: #315530; font-size: .88rem; font-weight: 950; }
 
 @media (max-width: 900px) {
   .metricGrid div:nth-child(2n) { border-left: 0; }
@@ -26,7 +30,8 @@
   .nav::-webkit-scrollbar { display: none; }
   .nav .brand,
   .navLinks { flex: 0 0 auto; }
-  .navLinks a { white-space: nowrap; }
+  .navLinks a { white-space: nowrap; padding: 10px 10px; }
+  .subTabs { margin-top: 8px; }
   .recoHero { padding-top: 28px; }
   .recoHero .profileIntro,
   .recoHero .profilePanel,
