@@ -10,12 +10,11 @@ type SiteNavProps = {
 };
 
 const primaryNav = [
-  { href: "/", label: "Accueil", section: "home" },
   { href: "/profil", label: "Profil", section: "profil" },
-  { href: "/base", label: "Base aliments", section: "base" },
+  { href: "/base", label: "Aliments", section: "base" },
   { href: "/cumul", label: "Cumul", section: "cumul" },
-  { href: "/longevite", label: "Diagnostic longévité", section: "longevite" },
-  { href: "/reco", label: "Reco âge bio", section: "reco" }
+  { href: "/longevite", label: "Longévité", section: "longevite" },
+  { href: "/reco", label: "Conseils", section: "reco" }
 ] as const;
 
 const subTabs: Record<SectionKey, Array<{ href: string; label: string }>> = {
@@ -62,7 +61,7 @@ export function SiteNav({ section, showSubTabs = false }: SiteNavProps) {
   return (
     <>
       <nav className="nav siteNav" aria-label="Navigation principale">
-        <a className="brand" href="/">NutriAtlas</a>
+        <a className="brand" href="/" aria-current={activeSection === "home" ? "page" : undefined}>NutriAtlas</a>
         <div className="navLinks">
           {primaryNav.map((item) => (
             <a href={item.href} key={item.href} aria-current={item.section === activeSection ? "page" : undefined}>
