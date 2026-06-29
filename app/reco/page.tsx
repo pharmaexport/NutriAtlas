@@ -9,15 +9,23 @@ type LongevityGainEstimate = {
   medianMonths: number | null;
   lowMonths?: number;
   highMonths?: number;
-  confidence: "forte" | "modérée" | "faible";
+  confidence: "forte" | "modérée" | "faible" | "émergente";
   note: string;
+  impactLabel?: string;
 };
 
 type Recommendation = {
   title: string;
-  body: string;
+  why: string;
+  action: string;
   source: string;
+  nutrients: string[];
+  actives: string[];
+  mechanisms: string[];
+  proof: "fort" | "modéré" | "émergent" | "pilotage";
   gain: LongevityGainEstimate;
+  priorityScore: number;
+  detail: string;
 };
 
 function activityEquivalent(q: LongevityQuestionnaire) {
@@ -30,24 +38,44 @@ function computableGain(lowMonths: number, medianMonths: number, highMonths: num
     medianMonths,
     highMonths,
     confidence,
-    note: "Estimation statistique si l’habitude est maintenue dans la durée."
+    note: "Estimation populationnelle si l’habitude est maintenue dans la durée."
   };
 }
 
-function nonComputableGain(reason: string): LongevityGainEstimate {
+function integratedImpact(label: string, reason: string, confidence: LongevityGainEstimate["confidence"] = "modérée"): LongevityGainEstimate {
   return {
     medianMonths: null,
-    confidence: "faible",
+    confidence,
+    impactLabel: label,
     note: reason
   };
 }
 
 function gainLabel(gain: LongevityGainEstimate) {
-  if (gain.medianMonths === null) return "Gain longévité non chiffrable";
+  if (gain.medianMonths === null) return gain.impactLabel || "Impact intégré au score global";
   if (gain.lowMonths !== undefined && gain.highMonths !== undefined && gain.lowMonths !== gain.highMonths) {
-    return `Gain longévité estimé : +${gain.lowMonths} à +${gain.highMonths} mois`;
+    return `Gain estimé : +${gain.lowMonths} à +${gain.highMonths} mois en bonne santé`;
   }
-  return `Gain longévité estimé : +${gain.medianMonths} mois`;
+  return `Gain estimé : +${gain.medianMonths} mois en bonne santé`;
+}
+
+function proofLabel(proof: Recommendation["proof"]) {
+  if (proof === "fort") return "Preuve forte";
+  if (proof === "modéré") return "Preuve modérée";
+  if (proof === "émergent") return "Preuve émergente";
+  return "Repère de pilotage";
+}
+
+function motivationFactor(q: LongevityQuestionnaire, preferred: Recommendation["title"]) {
+  const motivation = q.motivationLevel ?? 6;
+  const base = motivation >= 8 ? 1.2 : motivation >= 5 ? 1 : 0.75;
+  if (q.preferredAction === "any") return base;
+  if (q.preferredAction === "nutrition" && ["Fruits & légumes", "Légumineuses", "Réserves nutritionnelles", "Oméga-3", "Noix & graines"].includes(preferred)) return base * 1.15;
+  if (q.preferredAction === "movement" && ["Socle cardio", "Renforcement", "Moins assis", "Mobilité"].includes(preferred)) return base * 1.15;
+  if (q.preferredAction === "sleep" && preferred === "Sommeil") return base * 1.15;
+  if (q.preferredAction === "stress" && preferred === "Stress / fatigue") return base * 1.15;
+  if (q.preferredAction === "supplements" && ["Magnésium", "Vitamine D", "Créatine"].includes(preferred)) return base * 1.15;
+  return base;
 }
 
 function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
@@ -55,84 +83,216 @@ function buildRecommendations(profile: UserProfile, q: LongevityQuestionnaire) {
   const equivalent = activityEquivalent(q);
   const recommendations: Recommendation[] = [];
 
+  function pushReco(reco: Omit<Recommendation, "priorityScore">, gap: number, impact: number) {
+    recommendations.push({
+      ...reco,
+      priorityScore: Math.round(gap * impact * motivationFactor(q, reco.title) * 100)
+    });
+  }
+
   if (equivalent < 150) {
-    recommendations.push({
+    pushReco({
       title: "Socle cardio",
-      body: "Vise progressivement 150 minutes d’activité modérée par semaine, ou 75 minutes intenses. Les minutes intenses comptent double dans ce suivi.",
+      why: "Ton volume d’activité semble inférieur au repère protecteur de base.",
+      action: "Vise progressivement 150 minutes modérées par semaine, en commençant par 10 minutes de marche après un repas.",
       source: "OMS / NHS",
-      gain: computableGain(6, 15, 30, "modérée")
-    });
+      nutrients: ["potassium", "magnésium", "glucides de qualité"],
+      actives: ["polyphénols alimentaires"],
+      mechanisms: ["santé cardio-métabolique", "glycémie", "inflammation"],
+      proof: "fort",
+      gain: computableGain(6, 15, 30, "modérée"),
+      detail: "Le cardio reste un socle : il soutient la capacité respiratoire, la tension, la glycémie et la santé vasculaire. Les minutes intenses comptent double dans ce suivi."
+    }, 150 - equivalent, 1.2);
   } else {
-    recommendations.push({
+    pushReco({
       title: "Cardio OK",
-      body: `Tu déclares environ ${equivalent} minutes équivalentes modérées par semaine. Le prochain levier est la régularité et la réduction du temps assis.`,
+      why: `Tu déclares environ ${equivalent} minutes équivalentes modérées par semaine.`,
+      action: "Conserve la régularité et ajoute surtout des pauses actives si tu restes longtemps assis.",
       source: "OMS / NHS",
-      gain: computableGain(1, 4, 8, "faible")
-    });
+      nutrients: ["potassium", "magnésium"],
+      actives: ["polyphénols alimentaires"],
+      mechanisms: ["régularité", "santé vasculaire"],
+      proof: "modéré",
+      gain: computableGain(1, 4, 8, "faible"),
+      detail: "Le levier principal n’est plus d’ajouter beaucoup de cardio, mais de préserver la régularité et de réduire les longues périodes immobiles."
+    }, 20, 0.35);
   }
 
   if ((q.strengthSessions || 0) < 2) {
-    recommendations.push({
+    pushReco({
       title: "Renforcement",
-      body: "Ajoute 2 séances de renforcement par semaine : jambes, dos, poussée, tirage et gainage. C’est important pour la masse musculaire, le métabolisme et le vieillissement fonctionnel.",
+      why: "Ton profil indique moins de 2 séances de renforcement par semaine.",
+      action: "Ajoute 2 séances courtes : jambes, dos, poussée, tirage et gainage.",
       source: "ANSES / NHS",
-      gain: computableGain(6, 12, 20, "modérée")
-    });
-  }
-
-  if ((q.mobilitySessions || 0) < 2) {
-    recommendations.push({
-      title: "Mobilité",
-      body: "Ajoute 2 à 3 moments de mobilité, équilibre ou assouplissement par semaine : yoga, pilates, étirements actifs ou travail d’amplitude.",
-      source: "ANSES",
-      gain: nonComputableGain("Impact fonctionnel probable ; effet longévité direct difficile à isoler.")
-    });
+      nutrients: ["protéines", "leucine", "vitamine D", "magnésium"],
+      actives: ["créatine monohydrate"],
+      mechanisms: ["masse musculaire", "métabolisme", "autonomie", "ATP musculaire"],
+      proof: "fort",
+      gain: computableGain(6, 12, 20, "modérée"),
+      detail: "La recommandation active prioritaire est l’exercice. La créatine peut être pertinente chez certains profils, surtout si elle accompagne un vrai travail musculaire."
+    }, 2 - (q.strengthSessions || 0), 1.3);
   }
 
   if ((q.sittingHours || 0) > 8) {
-    recommendations.push({
+    pushReco({
       title: "Moins assis",
-      body: "Au-dessus de 8 heures assis par jour, ajoute des pauses actives : 2 à 5 minutes de marche ou mobilité toutes les 60 à 90 minutes.",
+      why: "Le temps assis déclaré dépasse le seuil de vigilance.",
+      action: "Ajoute 2 à 5 minutes de marche ou mobilité toutes les 60 à 90 minutes.",
       source: "ANSES / OMS",
-      gain: computableGain(4, 10, 18, "modérée")
-    });
+      nutrients: ["magnésium", "potassium"],
+      actives: [],
+      mechanisms: ["glycémie", "circulation", "métabolisme"],
+      proof: "modéré",
+      gain: computableGain(4, 10, 18, "modérée"),
+      detail: "La sédentarité doit être considérée comme un levier distinct du sport : on peut faire du sport et rester trop longtemps assis."
+    }, (q.sittingHours || 0) - 8, 1.1);
   }
 
   if ((q.fruitVegServingsPerDay || 0) < 5) {
-    recommendations.push({
-      title: "Fruits légumes",
-      body: "Augmente progressivement vers 5 portions par jour, en priorité légumes, fruits entiers, légumineuses et aliments peu transformés.",
-      source: "OMS",
-      gain: computableGain(6, 14, 28, "modérée")
-    });
+    pushReco({
+      title: "Fruits & légumes",
+      why: "Ton apport végétal semble inférieur au repère protecteur.",
+      action: "Ajoute 1 portion de légumes par jour cette semaine, puis progresse vers 5 portions.",
+      source: "OMS / PNNS",
+      nutrients: ["vitamine C", "folates", "potassium", "fibres", "magnésium"],
+      actives: ["polyphénols", "caroténoïdes", "flavonoïdes"],
+      mechanisms: ["inflammation", "stress oxydatif", "microbiote", "santé vasculaire"],
+      proof: "fort",
+      gain: computableGain(6, 14, 28, "modérée"),
+      detail: "Le bénéfice longévité ne vient pas d’une vitamine isolée, mais du profil végétal complet : fibres, micronutriments, diversité et composés bioactifs."
+    }, 5 - (q.fruitVegServingsPerDay || 0), 1.25);
   }
 
   if ((q.legumesPerWeek || 0) < 3) {
-    recommendations.push({
+    pushReco({
       title: "Légumineuses",
-      body: "Ajoute lentilles, pois chiches, haricots ou pois cassés 2 à 3 fois par semaine pour les fibres, les protéines végétales et la satiété.",
+      why: "Les légumineuses sont un levier nutritionnel simple et encore sous-utilisé.",
+      action: "Ajoute lentilles, pois chiches, haricots ou pois cassés 2 à 3 fois par semaine.",
       source: "OMS / PNNS",
-      gain: computableGain(3, 6, 12, "faible")
-    });
+      nutrients: ["fibres", "protéines végétales", "magnésium", "folates", "potassium"],
+      actives: ["prébiotiques"],
+      mechanisms: ["microbiote", "glycémie", "satiété", "cardio-métabolique"],
+      proof: "fort",
+      gain: computableGain(3, 6, 12, "faible"),
+      detail: "C’est l’un des ponts les plus cohérents entre qualité alimentaire, fibres, protéines végétales et santé métabolique."
+    }, 3 - (q.legumesPerWeek || 0), 1.05);
+  }
+
+  if ((q.nutsSeedsPerWeek || 0) < 5) {
+    pushReco({
+      title: "Noix & graines",
+      why: "Ton profil peut gagner en bons lipides, magnésium et densité nutritionnelle.",
+      action: "Ajoute une petite poignée de noix, amandes ou graines 4 à 5 jours par semaine.",
+      source: "PNNS / études longévité",
+      nutrients: ["magnésium", "vitamine E", "fibres", "acides gras insaturés"],
+      actives: ["polyphénols"],
+      mechanisms: ["inflammation", "cardio-métabolique", "satiété"],
+      proof: "modéré",
+      gain: computableGain(2, 6, 14, "faible"),
+      detail: "Les noix et graines sont surtout utiles comme remplacement d’en-cas pauvres en nutriments."
+    }, 5 - (q.nutsSeedsPerWeek || 0), 0.85);
+  }
+
+  if ((q.fattyFishPerWeek || 0) < 2) {
+    pushReco({
+      title: "Oméga-3",
+      why: "Le profil oméga-3 semble perfectible.",
+      action: "Vise 1 à 2 portions de poisson gras par semaine, ou une alternative algale si besoin.",
+      source: "ANSES / EFSA",
+      nutrients: ["EPA", "DHA", "vitamine D", "iode"],
+      actives: ["oméga-3 EPA/DHA"],
+      mechanisms: ["inflammation", "cerveau", "membranes cellulaires", "cœur"],
+      proof: "modéré",
+      gain: integratedImpact("Impact intégré cardio/cerveau", "L’effet isolé en mois n’est pas assez robuste pour être affiché seul."),
+      detail: "Les oméga-3 sont intégrés au score fonctionnel plutôt qu’affichés comme mois isolés."
+    }, 2 - (q.fattyFishPerWeek || 0), 0.8);
   }
 
   if (q.ultraProcessed === "frequent" || q.ultraProcessed === "daily") {
-    recommendations.push({
+    pushReco({
       title: "Ultra-transformés",
-      body: "Remplace une prise ultra-transformée par jour par une option simple : fruit + oléagineux, yaourt nature, légumineuses, œufs, poisson, céréales complètes ou légumes.",
+      why: "Les prises ultra-transformées fréquentes dégradent la qualité des sources nutritionnelles.",
+      action: "Remplace une prise par jour par fruit + oléagineux, yaourt nature, œufs, légumineuses ou légumes.",
       source: "OMS",
-      gain: computableGain(4, 9, 18, "faible")
-    });
+      nutrients: ["fibres", "potassium", "protéines", "micronutriments"],
+      actives: [],
+      mechanisms: ["densité nutritionnelle", "satiété", "glycémie", "inflammation"],
+      proof: "modéré",
+      gain: computableGain(4, 9, 18, "faible"),
+      detail: "L’objectif n’est pas la perfection : un remplacement régulier peut déjà améliorer les réserves nutritionnelles."
+    }, q.ultraProcessed === "daily" ? 3 : 2, 1.1);
+  }
+
+  if ((q.stressLevel || 0) >= 7 || (q.fatigueLevel || 0) >= 7) {
+    pushReco({
+      title: "Stress / fatigue",
+      why: "Ton stress ou ta fatigue est élevé, ce qui peut bloquer l’adhérence aux autres recos.",
+      action: "Choisis une micro-action : 5 minutes de respiration, marche calme ou routine coucher.",
+      source: "Profil NutriAtlas",
+      nutrients: ["magnésium", "vitamines B", "oméga-3"],
+      actives: ["magnésium selon apport", "polyphénols alimentaires"],
+      mechanisms: ["cortisol", "récupération", "comportements alimentaires", "sommeil"],
+      proof: "pilotage",
+      gain: integratedImpact("Impact fonctionnel prioritaire", "Très pertinent pour l’adhérence, mais non isolable en mois."),
+      detail: "Cette carte sert à éviter les plans irréalistes : on traite d’abord le frein principal si la fatigue ou le stress empêchent d’agir."
+    }, Math.max(q.stressLevel || 0, q.fatigueLevel || 0), 0.9);
+  }
+
+  if ((q.mobilitySessions || 0) < 2) {
+    pushReco({
+      title: "Mobilité",
+      why: "La mobilité complète le cardio et le renforcement.",
+      action: "Ajoute 2 moments de mobilité, équilibre ou assouplissement par semaine.",
+      source: "ANSES",
+      nutrients: ["protéines", "magnésium"],
+      actives: [],
+      mechanisms: ["amplitude", "équilibre", "autonomie"],
+      proof: "pilotage",
+      gain: integratedImpact("Impact fonctionnel : mobilité & autonomie", "Effet longévité direct difficile à isoler."),
+      detail: "À afficher comme défi optionnel, pas comme promesse de mois : yoga, pilates, étirements actifs ou équilibre sur un pied."
+    }, 2 - (q.mobilitySessions || 0), 0.55);
   }
 
   recommendations.push({
-    title: "Repères actifs",
-    body: `Ton profil calcule environ ${summary.calories} kcal/j, avec des repères personnalisés pour protéines, glucides, lipides, sucres, fibres, sodium, potassium et magnésium.`,
-    source: "ANSES / profil NutriAtlas",
-    gain: nonComputableGain("Repère de pilotage nutritionnel ; gain isolé non robuste.")
+    title: "Réserves nutritionnelles",
+    why: "Tes repères personnalisés permettent d’identifier les manques prioritaires.",
+    action: "Surveille protéines, fibres, sodium, potassium, magnésium, calcium, vitamine D et oméga-3.",
+    source: "ANSES / Profil NutriAtlas",
+    nutrients: ["protéines", "fibres", "sodium", "potassium", "magnésium", "calcium"],
+    actives: ["vitamine D", "oméga-3", "créatine selon profil"],
+    mechanisms: ["réserves muscle", "énergie", "os", "immunité", "cardio-métabolique"],
+    proof: "pilotage",
+    gain: integratedImpact("Impact intégré au score global", "Repères de pilotage nutritionnel, non chiffrables isolément."),
+    priorityScore: 30,
+    detail: `Ton profil calcule environ ${summary.calories} kcal/j et des repères personnalisés qui alimentent le Top 3 et le Top 10.`
   });
 
-  return recommendations.sort((a, b) => (b.gain.medianMonths ?? -1) - (a.gain.medianMonths ?? -1));
+  return recommendations.sort((a, b) => b.priorityScore - a.priorityScore);
+}
+
+function RecoCard({ item, rank }: { item: Recommendation; rank: number }) {
+  return (
+    <article className="recoCard">
+      <div className="recoHeader">
+        <span>#{rank} {item.title}</span>
+        <strong className="recommendationSource">{item.source}</strong>
+      </div>
+      <small className="gainPill">{gainLabel(item.gain)}</small>
+      <p>{item.why}</p>
+      <p><strong>Action semaine :</strong> {item.action}</p>
+      <div className="chipRow">
+        {item.nutrients.slice(0, 5).map((nutrient) => <span key={nutrient}>{nutrient}</span>)}
+      </div>
+      <details className="recoDetails">
+        <summary>+ Détail scientifique</summary>
+        <p><strong>Nutriments clés :</strong> {item.nutrients.length ? item.nutrients.join(", ") : "à personnaliser"}.</p>
+        <p><strong>Actifs possibles :</strong> {item.actives.length ? item.actives.join(", ") : "aucun actif spécifique prioritaire"}.</p>
+        <p><strong>Mécanismes :</strong> {item.mechanisms.join(", ")}.</p>
+        <p><strong>Niveau :</strong> {proofLabel(item.proof)} · {item.gain.note}</p>
+        <p>{item.detail}</p>
+      </details>
+    </article>
+  );
 }
 
 export default function RecoPage() {
@@ -145,6 +305,7 @@ export default function RecoPage() {
   }, []);
 
   const recommendations = useMemo(() => buildRecommendations(profile, questionnaire), [profile, questionnaire]);
+  const topThree = recommendations.slice(0, 3);
   const longevity = useMemo(() => calculateLongevityAge(profile, questionnaire), [profile, questionnaire]);
 
   return (
@@ -153,13 +314,13 @@ export default function RecoPage() {
 
       <section className="profileHero pageSection recoHero" id="priorites">
         <div className="profileIntro">
-          <p className="eyebrow">Reco</p>
-          <h1>Reco profil</h1>
+          <p className="eyebrow">Mes priorités</p>
+          <h1>Top recos longévité</h1>
           <p>
-            Priorités concrètes issues du profil, du questionnaire longévité et des repères ANSES, OMS et NHS.
+            Priorités concrètes issues du profil, du questionnaire global, des repères nutritionnels et des sources ANSES, OMS, PNNS, EFSA et NHS.
           </p>
           <div className="ctaRow">
-            <a className="primaryCta" href="/longevite">Remplir longévité</a>
+            <a className="primaryCta" href="/longevite">Remplir le bilan</a>
             <a className="secondaryCta" href="/profil">Modifier le profil</a>
           </div>
         </div>
@@ -168,6 +329,7 @@ export default function RecoPage() {
           <p className="eyebrow">Synthèse</p>
           <div className="metricGrid">
             <div><span>Âge bio</span><strong className="metricAge">{longevity.biologicalAgeLabel}</strong><small>estimation</small></div>
+            <div><span>Mois en bonne santé</span><strong className="metricText">{longevity.healthyLifeGainLabel}</strong><small>potentiel améliorable</small></div>
             <div><span>Score</span><strong>{longevity.score}</strong><small>indice / 100</small></div>
             <div><span>Activité</span><strong>{activityEquivalent(questionnaire)}</strong><small>min équiv. / semaine</small></div>
           </div>
@@ -176,22 +338,23 @@ export default function RecoPage() {
 
       <section className="pageSection profileFormPreview" id="gains">
         <div className="referencePreview">
-          <p className="eyebrow">Priorités</p>
-          <h2>Priorités profil</h2>
+          <p className="eyebrow">Priorités semaine</p>
+          <h2>Ton Top 3</h2>
           <div className="referenceList">
-            {recommendations.map((item) => (
-              <article key={item.title}>
-                <span>{item.title}</span>
-                <strong className="recommendationSource">{item.source}</strong>
-                <small className="gainPill">{gainLabel(item.gain)}</small>
-                <small>{item.body}</small>
-              </article>
-            ))}
+            {topThree.map((item, index) => <RecoCard item={item} rank={index + 1} key={item.title} />)}
+          </div>
+        </div>
+
+        <div className="referencePreview">
+          <p className="eyebrow">Top 10 complet</p>
+          <h2>Toutes les priorités utiles</h2>
+          <div className="referenceList">
+            {recommendations.slice(0, 10).map((item, index) => <RecoCard item={item} rank={index + 1} key={item.title} />)}
           </div>
           <div className="sourceNote">
-            <strong>Sources officielles</strong>
-            <p><small>ANSES : activité cardiorespiratoire, renforcement musculaire, assouplissement et sédentarité. OMS : activité physique, alimentation saine, sucres, sel et graisses. NHS : repères pratiques d’activité modérée, intense, renforcement et réduction du temps assis.</small></p>
+            <strong>Lecture des gains</strong>
             <p><small>Les gains affichés sont des ordres de grandeur populationnels. Ils ne constituent pas une promesse individuelle et ne s’additionnent pas toujours directement.</small></p>
+            <p><small>Quand un levier n’est pas chiffrable isolément, il est affiché comme impact fonctionnel ou intégré au score global.</small></p>
           </div>
         </div>
       </section>
