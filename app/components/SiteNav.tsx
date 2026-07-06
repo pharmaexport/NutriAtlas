@@ -62,7 +62,6 @@ export function SiteNav({ section, showSubTabs = false }: SiteNavProps) {
   return (
     <>
       <nav className="nav siteNav" aria-label="Navigation principale">
-        <a className="brand" href="/">NutriAtlas</a>
         <div className="navLinks">
           {primaryNav.map((item) => (
             <a href={item.href} key={item.href} aria-current={item.section === activeSection ? "page" : undefined}>
