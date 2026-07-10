@@ -1,0 +1,44 @@
+<svg width="720" height="420" viewBox="0 0 720 420" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Fresh market nutrition background pattern</title>
+  <desc id="desc">A subtle organic background pattern with leaves, seeds, citrus and vegetable-inspired shapes.</desc>
+  <rect width="720" height="420" fill="#F7F1E6"/>
+  <g opacity="0.9">
+    <path d="M72 52C101 26 145 31 167 63C189 95 171 135 132 139C93 143 42 79 72 52Z" fill="#E5F1D3"/>
+    <path d="M572 40C610 23 663 44 666 88C669 132 616 159 580 132C544 105 534 57 572 40Z" fill="#F8D9B5"/>
+    <path d="M83 304C122 266 184 276 204 326C224 376 166 411 113 389C60 367 44 342 83 304Z" fill="#DDEEC9"/>
+    <path d="M515 290C550 259 617 264 644 315C671 366 610 407 552 389C494 371 480 321 515 290Z" fill="#FFE6A8"/>
+  </g>
+
+  <g opacity="0.55" stroke="#2F5B3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M110 91C129 67 153 55 184 57C180 89 161 110 130 120"/>
+    <path d="M116 112C139 97 159 82 181 61"/>
+    <path d="M566 108C588 86 614 78 646 84C637 116 612 132 579 136"/>
+    <path d="M575 129C597 115 619 101 643 88"/>
+    <path d="M142 347C163 322 190 311 222 316C214 349 190 368 155 371"/>
+    <path d="M151 366C173 350 195 336 219 319"/>
+    <path d="M552 340C573 314 601 304 633 310C625 343 600 362 565 364"/>
+    <path d="M562 359C584 343 606 327 630 313"/>
+  </g>
+
+  <g opacity="0.7">
+    <circle cx="310" cy="74" r="16" fill="#F26B45"/>
+    <circle cx="334" cy="74" r="16" fill="#F26B45"/>
+    <path d="M304 57C318 44 331 44 346 57" stroke="#2F5B3A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="410" cy="326" r="18" fill="#F2B84B"/>
+    <path d="M397 326H423" stroke="#2F5B3A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M410 313V339" stroke="#2F5B3A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M315 228C337 203 370 193 407 199C396 237 367 256 326 256" fill="#A8D66D" stroke="#2F5B3A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M327 250C351 232 376 216 402 201" stroke="#2F5B3A" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <g opacity="0.35" fill="#2F5B3A">
+    <circle cx="70" cy="216" r="5"/>
+    <circle cx="103" cy="238" r="4"/>
+    <circle cx="640" cy="221" r="5"/>
+    <circle cx="608" cy="202" r="4"/>
+    <circle cx="250" cy="140" r="4"/>
+    <circle cx="468" cy="142" r="4"/>
+    <circle cx="272" cy="322" r="4"/>
+    <circle cx="480" cy="276" r="4"/>
+  </g>
+</svg>
