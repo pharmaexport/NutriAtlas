@@ -1,0 +1,31 @@
+<svg width="360" height="240" viewBox="0 0 360 240" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Fresh vegetable bowl illustration</title>
+  <desc id="desc">A premium fresh market style bowl with vegetables, herbs and soft organic shapes for nutrition recommendation cards.</desc>
+  <rect width="360" height="240" rx="36" fill="#F7F1E6"/>
+  <path d="M42 42C74 18 124 18 157 46C190 74 241 41 292 50C342 59 361 106 340 151C319 196 276 218 218 212C160 206 130 230 84 202C38 174 10 66 42 42Z" fill="#E6F3D8"/>
+  <path d="M73 68C92 49 122 53 139 75C156 97 144 129 116 132C88 135 54 87 73 68Z" fill="#FFE3A3" opacity="0.85"/>
+  <path d="M268 41C293 33 321 48 323 75C325 102 295 121 270 107C245 93 243 49 268 41Z" fill="#F9C7A6" opacity="0.85"/>
+
+  <ellipse cx="181" cy="168" rx="111" ry="31" fill="#C9B38B" opacity="0.28"/>
+  <path d="M72 121C79 174 120 205 181 205C242 205 283 174 290 121H72Z" fill="#FFF8EB" stroke="#2F5B3A" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M82 121C97 153 133 171 181 171C229 171 265 153 280 121H82Z" fill="#EAF4D8"/>
+  <ellipse cx="181" cy="121" rx="109" ry="36" fill="#FFFDF6" stroke="#2F5B3A" stroke-width="5"/>
+
+  <circle cx="117" cy="108" r="20" fill="#F26B45" stroke="#2F5B3A" stroke-width="4"/>
+  <path d="M106 94C115 86 123 86 132 94" stroke="#2F5B3A" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="241" cy="111" r="21" fill="#F26B45" stroke="#2F5B3A" stroke-width="4"/>
+  <path d="M229 96C238 88 247 88 256 96" stroke="#2F5B3A" stroke-width="4" stroke-linecap="round"/>
+
+  <path d="M151 108C128 96 112 78 111 54C135 57 153 74 164 98" fill="#7FBF4D" stroke="#2F5B3A" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M201 103C209 75 230 58 260 55C256 87 234 105 207 113" fill="#8CCB5E" stroke="#2F5B3A" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M178 102C163 78 163 55 179 35C198 57 198 82 184 104" fill="#A8D66D" stroke="#2F5B3A" stroke-width="4" stroke-linejoin="round"/>
+
+  <path d="M144 122C160 111 177 111 194 122" stroke="#2F5B3A" stroke-width="5" stroke-linecap="round"/>
+  <path d="M198 123C211 114 226 114 239 123" stroke="#2F5B3A" stroke-width="5" stroke-linecap="round"/>
+  <path d="M113 126C126 118 139 118 151 126" stroke="#2F5B3A" stroke-width="5" stroke-linecap="round"/>
+
+  <path d="M53 146C64 146 73 137 73 126" stroke="#86B65B" stroke-width="5" stroke-linecap="round"/>
+  <path d="M306 138C296 138 288 130 288 120" stroke="#86B65B" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="58" cy="151" r="5" fill="#F26B45"/>
+  <circle cx="302" cy="143" r="5" fill="#F2B84B"/>
+</svg>
