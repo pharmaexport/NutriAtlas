@@ -6,7 +6,10 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get("q") || "").trim();
-  const matches = q ? searchFoods(q) : [];
+  if (q.length > 120) {
+    return NextResponse.json({ error: "Requête de recherche trop longue" }, { status: 400 });
+  }
+  const matches = q ? searchFoods(q, 20) : [];
 
   return NextResponse.json({
     query: q,
