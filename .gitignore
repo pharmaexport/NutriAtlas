@@ -27,3 +27,23 @@ data/processed/**
 !data/raw/ciqual/metadata.json
 !data/processed/
 !data/processed/.gitkeep
+
+# Security additions
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.p12
+*.pfx
+*.key
+*.keystore
+*.credentials.json
+*-service-account.json
+service-account*.json
+credentials/
+secrets/
+.vercel/
+*.sqlite3
+*.db-journal
+*.log
+.DS_Store
